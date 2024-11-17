@@ -435,6 +435,7 @@ DefNode(GeometryNode, GEO_NODE_MESH_TOPOLOGY_OFFSET_CORNER_IN_FACE, 0, "OFFSET_C
 DefNode(GeometryNode, GEO_NODE_MESH_TOPOLOGY_VERTEX_OF_CORNER, 0, "VERTEX_OF_CORNER", VertexOfCorner, "Vertex of Corner", "Retrieve the vertex each face corner is attached to")
 DefNode(GeometryNode, GEO_NODE_OBJECT_INFO, 0, "OBJECT_INFO", ObjectInfo, "Object Info", "Retrieve information from an object")
 DefNode(GeometryNode, GEO_NODE_OFFSET_POINT_IN_CURVE, 0, "OFFSET_POINT_IN_CURVE", OffsetPointInCurve, "Offset Point in Curve", "Offset a control point index within its curve")
+DefNode(GeometryNode, GEO_NODE_PIZZA, 0, "PIZZA", Pizza, "Pizza", "Create a pizza mesh")
 DefNode(GeometryNode, GEO_NODE_POINTS_TO_CURVES, 0, "POINTS_TO_CURVES", PointsToCurves, "Points to Curves", "Split all points to curve by its group ID and reorder by weight")
 DefNode(GeometryNode, GEO_NODE_POINTS_TO_SDF_GRID, 0, "POINTS_TO_SDF_GRID", PointsToSDFGrid, "Points to SDF Grid", "Create a signed distance volume grid from points")
 DefNode(GeometryNode, GEO_NODE_POINTS_TO_VERTICES, 0, "POINTS_TO_VERTICES", PointsToVertices, "Points to Vertices", "Generate a mesh vertex for each point cloud point")
@@ -508,6 +509,7 @@ DefNode(GeometryNode, GEO_NODE_VIEWER, 0, "VIEWER", Viewer, "Viewer", "Display t
 DefNode(GeometryNode, GEO_NODE_VOLUME_CUBE, 0, "VOLUME_CUBE", VolumeCube, "Volume Cube", "Generate a dense volume with a field that controls the density at each grid voxel based on its position")
 DefNode(GeometryNode, GEO_NODE_VOLUME_TO_MESH, 0, "VOLUME_TO_MESH", VolumeToMesh, "Volume to Mesh", "Generate a mesh on the \"surface\" of a volume")
 DefNode(GeometryNode, GEO_NODE_WARNING, 0, "WARNING", Warning, "Warning", "Create custom warnings in node groups")
+// DefNode(GeometryNode, GEO_NODE_PIZZA, 0, "PIZZA", Pizza, "Pizza", "Create a pizza mesh")
 
 /* undefine macros */
 #undef DefNode

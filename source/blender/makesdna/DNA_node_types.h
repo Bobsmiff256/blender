@@ -2081,6 +2081,10 @@ typedef struct NodeGeometryDistributePointsInVolume {
   uint8_t mode;
 } NodeGeometryDistributePointsInVolume;
 
+typedef struct NodeGeometryPizza {
+  uint8_t olive_count;
+} NodeGeometryPizza;
+
 typedef struct NodeFunctionCompare {
   /** #NodeCompareOperation */
   int8_t operation;

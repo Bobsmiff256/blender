@@ -599,6 +599,7 @@ class NODE_MT_category_GEO_UTILITIES(Menu):
         node_add_menu.add_node_type(layout, "FunctionNodeRandomValue")
         node_add_menu.add_repeat_zone(layout, label="Repeat")
         node_add_menu.add_node_type(layout, "GeometryNodeSwitch")
+        node_add_menu.add_node_type(layout, "GeometryNodePizza")
         node_add_menu.draw_assets_for_catalog(layout, self.bl_label)
 
 
