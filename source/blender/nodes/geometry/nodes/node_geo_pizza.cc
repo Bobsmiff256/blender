@@ -23,10 +23,16 @@ namespace blender::nodes::node_geo_pizza_cc {
 
 NODE_STORAGE_FUNCS(NodeGeometryPizza)
 
+// Forward declarations
 static Mesh *create_pizza_mesh(int olive_count,
                                float radius,
+                               float olive_radius,
                                IndexRange &base_polys,
                                IndexRange &olive_polys);
+static blender::float2 get_olive_center(const int olive_index,
+                                        const int num_olives,
+                                        const float placement_radius);
+static const float get_olive_placement_radius(const float radius);
 
 // Defines the inputs and outputs of the node
 static void node_declare(NodeDeclarationBuilder &b)
@@ -40,7 +46,7 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_output<decl::Geometry>("Mesh");
   b.add_output<decl::Bool>("Base").field_on_all();
   b.add_output<decl::Bool>("Olives").field_on_all();
-  // was field_source();
+  b.add_output<decl::Vector>("UV Map").field_on_all();
 }
 
 // Draws the node
@@ -78,9 +84,10 @@ static void node_geo_exec(GeoNodeExecParams params)
   const NodeGeometryPizza &storage = node_storage(params.node());
   const int olive_count = storage.olive_count;
   const float radius = params.extract_input<float>("Radius");
+  const float olive_radius = radius / 10;
 
   IndexRange base_polys, olive_polys;
-  Mesh *mesh = create_pizza_mesh(olive_count, radius, base_polys, olive_polys);
+  Mesh *mesh = create_pizza_mesh(olive_count, radius, olive_radius, base_polys, olive_polys);
 
   // Build a geometry set to wrap the mesh in, and set it as output
   params.set_output("Mesh", GeometrySet::from_mesh(mesh));
@@ -106,6 +113,59 @@ static void node_geo_exec(GeoNodeExecParams params)
     for (const int i : olive_polys)
       selection.span[i] = true;
     selection.finish();
+  }
+
+  // output UVs
+  std::optional<std::string> uv_id = params.get_output_anonymous_attribute_id_if_needed("UV Map");
+  if (uv_id.has_value()) {
+    bke::MutableAttributeAccessor uvmap = mesh->attributes_for_write();
+    bke::SpanAttributeWriter<blender::float2> uvWriter =
+        uvmap.lookup_or_add_for_write_span<blender::float2>(*uv_id, bke::AttrDomain::Corner);
+
+    // Foreach base poly
+    for (const int bp : base_polys) {
+      int face_corner_offset = mesh->face_offsets()[bp];
+      int next_face_offset = mesh->face_offsets()[bp + 1];  // works because the array ends with
+                                                            // the total number of corners
+      int num_corners = next_face_offset - face_corner_offset;
+      // Foreach corner in base
+      for (int c = 0; c < num_corners; c++) {
+        int vert_idx = mesh->corner_verts()[face_corner_offset + c];
+        blender::float3 vert_pos = mesh->vert_positions()[vert_idx];
+        // Set uv
+        float u = (vert_pos.x + radius) / (2 * radius);
+        float v = (vert_pos.y + radius) / (2 * radius);
+        float2 uv(u, v);
+        uvWriter.span[face_corner_offset + c] = uv;
+      }
+    }
+
+    const float placement_radius = get_olive_placement_radius(radius);
+
+    // For each olive poly
+    for (int olive_index = 0; olive_index < olive_count; olive_index++) {
+      const int olive_poly = olive_polys[olive_index];
+      const int face_corner_offset = mesh->face_offsets()[olive_poly];
+      const int next_face_offset =
+          mesh->face_offsets()[olive_poly + 1];  // works because the array ends with the total
+                                                 // number of corners
+      const int num_corners = next_face_offset - face_corner_offset;
+      // Foreach corner in olive
+      for (int c = 0; c < num_corners; c++) {
+        const int vert_idx = mesh->corner_verts()[face_corner_offset + c];
+        blender::float3 vert_pos = mesh->vert_positions()[vert_idx];
+        const blender::float2 olive_center = get_olive_center(
+            olive_index, olive_count, placement_radius);
+        vert_pos.x -= olive_center.x;
+        vert_pos.y -= olive_center.y;
+
+        // Set uv
+        const float u = (vert_pos.x + olive_radius) / (2 * olive_radius);
+        const float v = (vert_pos.y + olive_radius) / (2 * olive_radius);
+        const float2 uv(u, v);
+        uvWriter.span[face_corner_offset + c] = uv;
+      }
+    }
   }
 }
 
@@ -160,6 +220,7 @@ static void node_rna(StructRNA *srna)
 
 static Mesh *create_pizza_mesh(const int olive_count,
                                const float radius,
+                               const float olive_radius,
                                IndexRange &base_polys,
                                IndexRange &olive_polys)
 {
@@ -212,21 +273,15 @@ static Mesh *create_pizza_mesh(const int olive_count,
   }
 
   // Add olives
-  const float olive_rad = radius / 8;
+  const float olive_rad = olive_radius;
   olive_polys = IndexRange(1, olive_count);
   for (int i = 0; i < olive_count; i++) {
     const int offset = NUM_SEGMENTS + i * OLIVE_SEGMENTS;
 
     // Olive position
-    float cx = 0.0f, cy = 0.0f;
-    // Olive 0 is at the center
-    if (i > 0) {
-      float delta = (M_PI * 2) / (olive_count - 1);
-      float angle = delta * (i - 1);
-      float olivePlacementRad = radius / 2;
-      cx = std::cos((i - 1) * delta) * olivePlacementRad;
-      cy = std::sin((i - 1) * delta) * olivePlacementRad;
-    }
+    const float olive_placement_radius = get_olive_placement_radius(radius);
+    const blender::float2 olive_center = get_olive_center(i, olive_count, olive_placement_radius);
+    const float cx = olive_center.x, cy = olive_center.y;
 
     // Verts
     const float olive_angle_delta = (M_PI * 2) / OLIVE_SEGMENTS;
@@ -264,6 +319,27 @@ static Mesh *create_pizza_mesh(const int olive_count,
 
   BLI_assert(BKE_mesh_is_valid(mesh));
   return mesh;
+}
+
+static blender::float2 get_olive_center(const int olive_index,
+                                        const int num_olives,
+                                        const float placement_radius)
+{
+  // Olive 0 is at the center
+  float cx = 0, cy = 0;
+  if (olive_index > 0) {
+    float delta = (M_PI * 2) / (num_olives - 1);
+    float angle = delta * (olive_index - 1);
+    cx = std::cos((olive_index - 1) * delta) * placement_radius;
+    cy = std::sin((olive_index - 1) * delta) * placement_radius;
+  }
+
+  return blender::float2(cx, cy);
+}
+
+static const float get_olive_placement_radius(const float radius)
+{
+  return radius / 2;
 }
 
 static void node_register()
