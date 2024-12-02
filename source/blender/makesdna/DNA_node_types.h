@@ -2169,6 +2169,12 @@ typedef struct NodeGeometryBake {
   char _pad[4];
 } NodeGeometryBake;
 
+typedef struct NodeFunctionEquation {
+  int32_t *byte_code;  // pointer to byte code compiled from equation
+  int32_t hash;        // hash of the string that was compiled
+  int32_t stack_size;  // Number of ints of stack needed by bytecode
+};
+
 /* script node mode */
 enum {
   NODE_SCRIPT_INTERNAL = 0,
