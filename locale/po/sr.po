@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2012-09-07 22:32+0100\n"
 "Last-Translator: Nikola Radovanovic <cobisimo@gmail.com>\n"
 "Language-Team: Nikola Radovanovic\n"
@@ -6252,10 +6252,6 @@ msgid "Roughness"
 msgstr "Храпавост"
 
 
-msgid "Opaque"
-msgstr "Непровидно"
-
-
 msgid "Texture Slot Images"
 msgstr "Слике слота текстура"
 
@@ -8732,104 +8728,104 @@ msgid "Material slot name"
 msgstr "Назив слота материјала"
 
 
-msgid "Names"
-msgstr "Имена"
-
-
-msgid "Propagate"
-msgstr "Пренеси"
-
-
-msgid "In-Betweens"
-msgstr "У међувремену"
-
-
-msgid "Clear Transform"
-msgstr "Очисти трансформације"
-
-
-msgid "Align View"
-msgstr "Поравнај поглед"
-
-
-msgid "Mesh Select Mode"
-msgstr "Мод избора мреже"
-
-
-msgid "Navigation"
-msgstr "Навигација"
-
-
-msgid "Disable Bone Options"
-msgstr "Онемогући опције костију"
-
-
-msgid "Enable Bone Options"
-msgstr "Омогући опције костију"
-
-
-msgid "Local View"
-msgstr "Локални поглед"
-
-
-msgid "Toggle Bone Options"
-msgstr "Мање/више информација"
+msgid "Merge"
+msgstr "Сједини"
 
 
 msgid "Show/Hide"
 msgstr "Прикажи/сакриј"
 
 
-msgid "UV Mapping"
-msgstr "UV Мапирање"
-
-
-msgid "Snap"
-msgstr "Лепљење"
-
-
-msgid "Mirror"
-msgstr "Огледало"
-
-
-msgid "Hooks"
-msgstr "Удице"
-
-
-msgid "Quick Effects"
-msgstr "Брзи ефекти"
-
-
-msgid "Track"
-msgstr "Стаза"
-
-
-msgid "Apply"
-msgstr "Примени"
-
-
-msgid "Rigid Body"
-msgstr "Круто тело"
-
-
-msgid "Relations"
-msgstr "Односи"
-
-
-msgid "Select Linked"
-msgstr "Изабери повезано"
+msgid "Local View"
+msgstr "Локални поглед"
 
 
 msgid "Special Characters"
 msgstr "Специјални знаци"
 
 
+msgid "Names"
+msgstr "Имена"
+
+
 msgid "Bone Roll"
 msgstr "Ролна костију"
 
 
-msgid "Merge"
-msgstr "Сједини"
+msgid "Toggle Bone Options"
+msgstr "Мање/више информација"
+
+
+msgid "Enable Bone Options"
+msgstr "Омогући опције костију"
+
+
+msgid "Disable Bone Options"
+msgstr "Онемогући опције костију"
+
+
+msgid "Select Linked"
+msgstr "Изабери повезано"
+
+
+msgid "Mesh Select Mode"
+msgstr "Мод избора мреже"
+
+
+msgid "Snap"
+msgstr "Лепљење"
+
+
+msgid "Relations"
+msgstr "Односи"
+
+
+msgid "Rigid Body"
+msgstr "Круто тело"
+
+
+msgid "Apply"
+msgstr "Примени"
+
+
+msgid "Track"
+msgstr "Стаза"
+
+
+msgid "Navigation"
+msgstr "Навигација"
+
+
+msgid "Quick Effects"
+msgstr "Брзи ефекти"
+
+
+msgid "UV Mapping"
+msgstr "UV Мапирање"
+
+
+msgid "Hooks"
+msgstr "Удице"
+
+
+msgid "Mirror"
+msgstr "Огледало"
+
+
+msgid "Clear Transform"
+msgstr "Очисти трансформације"
+
+
+msgid "In-Betweens"
+msgstr "У међувремену"
+
+
+msgid "Propagate"
+msgstr "Пренеси"
+
+
+msgid "Align View"
+msgstr "Поравнај поглед"
 
 
 msgid "Basic"
@@ -16049,10 +16045,6 @@ msgid "Bake object transformations"
 msgstr "Без трансформација"
 
 
-msgid "Remove all constraints from keyed object/bones, and do 'visual' keying"
-msgstr "Уклони сва IK ограничења са изабраних костију"
-
-
 msgid "Clear Parents"
 msgstr "Обриши родитељске везе"
 
@@ -20182,10 +20174,6 @@ msgid "Self Collision"
 msgstr "Самоодбијање"
 
 
-msgid "Indirect Lighting"
-msgstr "Индиректно осветљење"
-
-
 msgid "Shadows"
 msgstr "Сенке"
 
@@ -23247,30 +23235,6 @@ msgid "Snap Element"
 msgstr "Елемент лепљења"
 
 
-msgid "Node X"
-msgstr "Чвор X"
-
-
-msgid "Snap to left/right node border"
-msgstr "Лепи за леву/десну ивицу чвора"
-
-
-msgid "Node Y"
-msgstr "Чвор Y"
-
-
-msgid "Snap to top/bottom node border"
-msgstr "Лепи за горњу/доњу ивицу чвора"
-
-
-msgid "Node X / Y"
-msgstr "Чвор X / Y"
-
-
-msgid "Snap to any node border"
-msgstr "Лепи за боло коју ивицу свора"
-
-
 msgid "Snap Target"
 msgstr "Циљ лепљења"
 
@@ -23689,11 +23653,6 @@ msgstr "NLA Уређивач"
 msgctxt "WindowManager"
 msgid "NLA Generic"
 msgstr "Почетни NLA"
-
-
-msgctxt "WindowManager"
-msgid "Timeline"
-msgstr "Временска линија"
 
 
 msgctxt "WindowManager"

@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2012-09-07 22:32+0100\n"
 "Last-Translator: Nikola Radovanovic <cobisimo@gmail.com>\n"
 "Language-Team: Nikola Radovanovic\n"
@@ -6252,10 +6252,6 @@ msgid "Roughness"
 msgstr "Hrapavost"
 
 
-msgid "Opaque"
-msgstr "Neprovidno"
-
-
 msgid "Texture Slot Images"
 msgstr "Slike slota tekstura"
 
@@ -8732,104 +8728,104 @@ msgid "Material slot name"
 msgstr "Naziv slota materijala"
 
 
-msgid "Names"
-msgstr "Imena"
-
-
-msgid "Propagate"
-msgstr "Prenesi"
-
-
-msgid "In-Betweens"
-msgstr "U međuvremenu"
-
-
-msgid "Clear Transform"
-msgstr "Očisti transformacije"
-
-
-msgid "Align View"
-msgstr "Poravnaj pogled"
-
-
-msgid "Mesh Select Mode"
-msgstr "Mod izbora mreže"
-
-
-msgid "Navigation"
-msgstr "Navigacija"
-
-
-msgid "Disable Bone Options"
-msgstr "Onemogući opcije kostiju"
-
-
-msgid "Enable Bone Options"
-msgstr "Omogući opcije kostiju"
-
-
-msgid "Local View"
-msgstr "Lokalni pogled"
-
-
-msgid "Toggle Bone Options"
-msgstr "Manje/više informacija"
+msgid "Merge"
+msgstr "Sjedini"
 
 
 msgid "Show/Hide"
 msgstr "Prikaži/sakrij"
 
 
-msgid "UV Mapping"
-msgstr "UV Mapiranje"
-
-
-msgid "Snap"
-msgstr "Lepljenje"
-
-
-msgid "Mirror"
-msgstr "Ogledalo"
-
-
-msgid "Hooks"
-msgstr "Udice"
-
-
-msgid "Quick Effects"
-msgstr "Brzi efekti"
-
-
-msgid "Track"
-msgstr "Staza"
-
-
-msgid "Apply"
-msgstr "Primeni"
-
-
-msgid "Rigid Body"
-msgstr "Kruto telo"
-
-
-msgid "Relations"
-msgstr "Odnosi"
-
-
-msgid "Select Linked"
-msgstr "Izaberi povezano"
+msgid "Local View"
+msgstr "Lokalni pogled"
 
 
 msgid "Special Characters"
 msgstr "Specijalni znaci"
 
 
+msgid "Names"
+msgstr "Imena"
+
+
 msgid "Bone Roll"
 msgstr "Rolna kostiju"
 
 
-msgid "Merge"
-msgstr "Sjedini"
+msgid "Toggle Bone Options"
+msgstr "Manje/više informacija"
+
+
+msgid "Enable Bone Options"
+msgstr "Omogući opcije kostiju"
+
+
+msgid "Disable Bone Options"
+msgstr "Onemogući opcije kostiju"
+
+
+msgid "Select Linked"
+msgstr "Izaberi povezano"
+
+
+msgid "Mesh Select Mode"
+msgstr "Mod izbora mreže"
+
+
+msgid "Snap"
+msgstr "Lepljenje"
+
+
+msgid "Relations"
+msgstr "Odnosi"
+
+
+msgid "Rigid Body"
+msgstr "Kruto telo"
+
+
+msgid "Apply"
+msgstr "Primeni"
+
+
+msgid "Track"
+msgstr "Staza"
+
+
+msgid "Navigation"
+msgstr "Navigacija"
+
+
+msgid "Quick Effects"
+msgstr "Brzi efekti"
+
+
+msgid "UV Mapping"
+msgstr "UV Mapiranje"
+
+
+msgid "Hooks"
+msgstr "Udice"
+
+
+msgid "Mirror"
+msgstr "Ogledalo"
+
+
+msgid "Clear Transform"
+msgstr "Očisti transformacije"
+
+
+msgid "In-Betweens"
+msgstr "U međuvremenu"
+
+
+msgid "Propagate"
+msgstr "Prenesi"
+
+
+msgid "Align View"
+msgstr "Poravnaj pogled"
 
 
 msgid "Basic"
@@ -16049,10 +16045,6 @@ msgid "Bake object transformations"
 msgstr "Bez transformacija"
 
 
-msgid "Remove all constraints from keyed object/bones, and do 'visual' keying"
-msgstr "Ukloni sva IK ograničenja sa izabranih kostiju"
-
-
 msgid "Clear Parents"
 msgstr "Obriši roditeljske veze"
 
@@ -20182,10 +20174,6 @@ msgid "Self Collision"
 msgstr "Samoodbijanje"
 
 
-msgid "Indirect Lighting"
-msgstr "Indirektno osvetljenje"
-
-
 msgid "Shadows"
 msgstr "Senke"
 
@@ -23247,30 +23235,6 @@ msgid "Snap Element"
 msgstr "Element lepljenja"
 
 
-msgid "Node X"
-msgstr "Čvor X"
-
-
-msgid "Snap to left/right node border"
-msgstr "Lepi za levu/desnu ivicu čvora"
-
-
-msgid "Node Y"
-msgstr "Čvor Y"
-
-
-msgid "Snap to top/bottom node border"
-msgstr "Lepi za gornju/donju ivicu čvora"
-
-
-msgid "Node X / Y"
-msgstr "Čvor X / Y"
-
-
-msgid "Snap to any node border"
-msgstr "Lepi za bolo koju ivicu svora"
-
-
 msgid "Snap Target"
 msgstr "Cilj lepljenja"
 
@@ -23689,11 +23653,6 @@ msgstr "NLA Uređivač"
 msgctxt "WindowManager"
 msgid "NLA Generic"
 msgstr "Početni NLA"
-
-
-msgctxt "WindowManager"
-msgid "Timeline"
-msgstr "Vremenska linija"
 
 
 msgctxt "WindowManager"

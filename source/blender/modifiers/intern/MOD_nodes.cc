@@ -965,7 +965,7 @@ static BakeFrameIndices get_bake_frame_indices(
 {
   BakeFrameIndices frame_indices;
   if (!frame_caches.is_empty()) {
-    const int first_future_frame_index = binary_search::find_predicate_begin(
+    const int first_future_frame_index = binary_search::first_if(
         frame_caches,
         [&](const std::unique_ptr<bake::FrameCache> &value) { return value->frame > frame; });
     frame_indices.next = (first_future_frame_index == frame_caches.size()) ?
@@ -1236,7 +1236,7 @@ class NodesModifierSimulationParams : public nodes::GeoNodesSimulationParams {
     }
 
     /* If there are no baked frames, we don't need keep track of the data-blocks. */
-    if (!node_cache.bake.frames.is_empty()) {
+    if (!node_cache.bake.frames.is_empty() || node_cache.prev_cache.has_value()) {
       for (const NodesModifierDataBlock &data_block : Span{bake.data_blocks, bake.data_blocks_num})
       {
         data_block_map.old_mappings.add(data_block, data_block.id);
@@ -1505,7 +1505,7 @@ class NodesModifierBakeParams : public nodes::GeoNodesBakeParams {
           frame_cache->frame = current_frame;
           frame_cache->state = std::move(state);
           auto &frames = node_cache->bake.frames;
-          const int insert_index = binary_search::find_predicate_begin(
+          const int insert_index = binary_search::first_if(
               frames, [&](const std::unique_ptr<bake::FrameCache> &frame_cache) {
                 return frame_cache->frame > current_frame;
               });
@@ -1661,7 +1661,7 @@ static void add_data_block_items_writeback(const ModifierEvalContext &ctx,
             item.key))
     {
       /* Only writeback if the bake node has actually baked anything. */
-      if (!node_cache->bake.frames.is_empty()) {
+      if (!node_cache->bake.frames.is_empty() || node_cache->prev_cache.has_value()) {
         data.new_mappings = std::move(item.value->data_block_map.new_mappings);
       }
     }
@@ -2248,7 +2248,13 @@ static bool interace_panel_has_socket(const bNodeTreeInterfacePanel &interface_p
 {
   for (const bNodeTreeInterfaceItem *item : interface_panel.items()) {
     if (item->item_type == NODE_INTERFACE_SOCKET) {
-      return true;
+      const bNodeTreeInterfaceSocket &socket = *reinterpret_cast<const bNodeTreeInterfaceSocket *>(
+          item);
+      if ((socket.flag &
+           (NODE_INTERFACE_SOCKET_HIDE_IN_MODIFIER | NODE_INTERFACE_SOCKET_OUTPUT)) == 0)
+      {
+        return true;
+      }
     }
     if (item->item_type == NODE_INTERFACE_PANEL) {
       if (interace_panel_has_socket(*reinterpret_cast<const bNodeTreeInterfacePanel *>(item))) {
@@ -2443,7 +2449,9 @@ static void draw_warnings(const bContext *C,
     return;
   }
   PanelLayout panel = uiLayoutPanelProp(C, layout, md_ptr, "open_warnings_panel");
-  uiItemL(panel.header, fmt::format(IFACE_("Warnings ({})"), warnings_num).c_str(), ICON_NONE);
+  uiItemL(panel.header,
+          fmt::format(fmt::runtime(IFACE_("Warnings ({})")), warnings_num).c_str(),
+          ICON_NONE);
   if (!panel.body) {
     return;
   }

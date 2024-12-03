@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2024-04-29 13:36+0000\n"
 "Last-Translator: Zdeněk Doležal <Griperis@outlook.cz>\n"
 "Language-Team: Czech <https://translate.blender.org/projects/blender-ui/ui/cs/>\n"
@@ -9766,18 +9766,6 @@ msgid "Area Light"
 msgstr "Plošné Světlo"
 
 
-msgid "Contact Shadow Distance"
-msgstr "Vzdálenost Stykového Stínu"
-
-
-msgid "Shadow Buffer Bias"
-msgstr "Vložit barvu z bufferu"
-
-
-msgid "Shadow Color"
-msgstr "Ukázat kurzor"
-
-
 msgid "Shadow Soft Size"
 msgstr "Velikost stínu"
 
@@ -9796,10 +9784,6 @@ msgstr "Elipsa"
 
 msgid "Size Y"
 msgstr "Velikost Y"
-
-
-msgid "Contact Shadow"
-msgstr "Stykový Stín"
 
 
 msgid "Point Light"
@@ -9932,22 +9916,6 @@ msgstr "Hloubka lomu"
 
 msgid "Roughness of the material"
 msgstr "Roughness materiálu"
-
-
-msgid "Shadow Mode"
-msgstr "Režim Stínů"
-
-
-msgid "Opaque"
-msgstr "Otevřít"
-
-
-msgid "Alpha Clip"
-msgstr "Alfa Clip"
-
-
-msgid "Alpha Hashed"
-msgstr "Alfa Hashed"
 
 
 msgid "Specular color of the material"
@@ -13789,16 +13757,104 @@ msgid "Material slot name"
 msgstr "Název okénka materiálu"
 
 
+msgid "Clean Up"
+msgstr "Vyčistit"
+
+
+msgid "Merge"
+msgstr "Sloučit"
+
+
+msgid "Show/Hide"
+msgstr "Zobrazit/skrýt"
+
+
+msgid "Local View"
+msgstr "Lokální pohled"
+
+
+msgid "Special Characters"
+msgstr "Speciální Znaky"
+
+
 msgid "Names"
 msgstr "Názvy"
 
 
-msgid "Propagate"
-msgstr "Vložit"
+msgid "Bone Roll"
+msgstr "Kost"
+
+
+msgid "Select Linked"
+msgstr "Vybrat Propojené"
+
+
+msgid "Mesh Select Mode"
+msgstr "Síťový mód výběru"
+
+
+msgid "Pivot Point"
+msgstr "Bod pro pivot"
+
+
+msgid "Snap"
+msgstr "Přichytit"
+
+
+msgid "Proportional Editing Falloff"
+msgstr "Způsob útlumu"
+
+
+msgid "Relations"
+msgstr "Vztahy"
+
+
+msgid "Rigid Body"
+msgstr "Tuhé Těleso"
+
+
+msgid "Apply"
+msgstr "Použít"
+
+
+msgid "Track"
+msgstr "Sledování"
+
+
+msgid "Navigation"
+msgstr "Navigace"
+
+
+msgid "Quick Effects"
+msgstr "Rychlé Efekty"
+
+
+msgid "Make Single User"
+msgstr "Přivlastnit"
+
+
+msgid "UV Mapping"
+msgstr "UV mapování"
+
+
+msgid "Hooks"
+msgstr "Háky"
+
+
+msgid "Mirror"
+msgstr "Zrcadlit"
+
+
+msgid "Assign Material"
+msgstr "Přiřadit Materiál"
 
 
 msgid "Clear Transform"
 msgstr "Vyčistit transformaci"
+
+
+msgid "Propagate"
+msgstr "Vložit"
 
 
 msgid "Align View"
@@ -13807,94 +13863,6 @@ msgstr "Zarovnat pohled"
 
 msgid "Face Data"
 msgstr "Data Ploch"
-
-
-msgid "Mesh Select Mode"
-msgstr "Síťový mód výběru"
-
-
-msgid "Navigation"
-msgstr "Navigace"
-
-
-msgid "Local View"
-msgstr "Lokální pohled"
-
-
-msgid "Show/Hide"
-msgstr "Zobrazit/skrýt"
-
-
-msgid "UV Mapping"
-msgstr "UV mapování"
-
-
-msgid "Assign Material"
-msgstr "Přiřadit Materiál"
-
-
-msgid "Snap"
-msgstr "Přichytit"
-
-
-msgid "Mirror"
-msgstr "Zrcadlit"
-
-
-msgid "Hooks"
-msgstr "Háky"
-
-
-msgid "Make Single User"
-msgstr "Přivlastnit"
-
-
-msgid "Clean Up"
-msgstr "Vyčistit"
-
-
-msgid "Quick Effects"
-msgstr "Rychlé Efekty"
-
-
-msgid "Track"
-msgstr "Sledování"
-
-
-msgid "Apply"
-msgstr "Použít"
-
-
-msgid "Rigid Body"
-msgstr "Tuhé Těleso"
-
-
-msgid "Relations"
-msgstr "Vztahy"
-
-
-msgid "Select Linked"
-msgstr "Vybrat Propojené"
-
-
-msgid "Special Characters"
-msgstr "Speciální Znaky"
-
-
-msgid "Bone Roll"
-msgstr "Kost"
-
-
-msgid "Merge"
-msgstr "Sloučit"
-
-
-msgid "Pivot Point"
-msgstr "Bod pro pivot"
-
-
-msgid "Proportional Editing Falloff"
-msgstr "Způsob útlumu"
 
 
 msgid "Basic"
@@ -18886,6 +18854,16 @@ msgstr "Přidat Přednastavení Dynamiky Vlasů"
 
 
 msgctxt "Operator"
+msgid "Disable Add-on"
+msgstr "Zakázat Doplněk"
+
+
+msgctxt "Operator"
+msgid "Enable Add-on"
+msgstr "Povolit Doplněk"
+
+
+msgctxt "Operator"
 msgid "Install Add-on"
 msgstr "Instalovat Doplněk"
 
@@ -19156,16 +19134,6 @@ msgstr "Přidat, nebo odstranit přednastavení operátoru"
 msgctxt "Operator"
 msgid "Operator Preset"
 msgstr "Přednastavení Operátoru"
-
-
-msgctxt "Operator"
-msgid "Disable Add-on"
-msgstr "Zakázat Doplněk"
-
-
-msgctxt "Operator"
-msgid "Enable Add-on"
-msgstr "Povolit Doplněk"
 
 
 msgid "Open a path in a file browser"
@@ -21431,6 +21399,10 @@ msgid "(De)select all control points"
 msgstr "O(d)značit vše"
 
 
+msgid "Deselect linked control points rather than selecting them"
+msgstr "Zdvojí vybrané kontrolní body a úseky mezi nimi"
+
+
 msgctxt "Operator"
 msgid "Select Random"
 msgstr "Vybrat Náhodně"
@@ -21612,10 +21584,6 @@ msgstr "Nastavit poloměr křivky"
 
 msgid "Select all control points linked to already selected ones"
 msgstr "Vybrané vertexy náleží do aktuální skupiny vertexů"
-
-
-msgid "Deselect linked control points rather than selecting them"
-msgstr "Zdvojí vybrané kontrolní body a úseky mezi nimi"
 
 
 msgctxt "Operator"
@@ -24889,10 +24857,6 @@ msgstr "Bake transformace objektu"
 
 msgid "Clear Constraints"
 msgstr "Zrušit vazby"
-
-
-msgid "Remove all constraints from keyed object/bones, and do 'visual' keying"
-msgstr "Přidat vazbu aktivní kosti"
 
 
 msgid "Bake animation onto the object then clear parents (objects only)"
@@ -31416,6 +31380,14 @@ msgid "Restrict"
 msgstr "Omezit"
 
 
+msgid "Active Tool"
+msgstr "Aktivní nástroj"
+
+
+msgid "View Lock"
+msgstr "Zámek zobrazení"
+
+
 msgid "Shadow Settings"
 msgstr "Nastavení Stínů"
 
@@ -31462,14 +31434,6 @@ msgstr "Stereoskopie"
 
 msgid "Auto-Masking"
 msgstr "Auto-Maska"
-
-
-msgid "Active Tool"
-msgstr "Aktivní nástroj"
-
-
-msgid "View Lock"
-msgstr "Zámek zobrazení"
 
 
 msgid "Chain Scaling"
@@ -31642,10 +31606,6 @@ msgstr "Vlákna"
 
 msgid "Custom Distance"
 msgstr "Vlastní Vzdálenost"
-
-
-msgid "Cascaded Shadow Map"
-msgstr "Kaskádová mapa stínů"
 
 
 msgid "Composition Guides"
@@ -31972,28 +31932,12 @@ msgid "Helpers"
 msgstr "Pomocníci"
 
 
-msgid "Indirect Lighting"
-msgstr "Nepřímé osvětlení"
-
-
 msgid "Denoising"
 msgstr "Odstranění šumu"
 
 
 msgid "Shadows"
 msgstr "Stíny"
-
-
-msgid "Volumetrics"
-msgstr "Volumetrie"
-
-
-msgid "Volumetric Lighting"
-msgstr "Volumetrické Osvětlení"
-
-
-msgid "Volumetric Shadows"
-msgstr "Volumetrické Stíny"
 
 
 msgid "Encoding"
@@ -34926,14 +34870,6 @@ msgid "Shading Settings"
 msgstr "Nastavení Stínování"
 
 
-msgid "Knee"
-msgstr "Koleno"
-
-
-msgid "Denoise Amount"
-msgstr "Množství Odstranění Šumu"
-
-
 msgid "Max Size"
 msgstr "Maximální velikost"
 
@@ -34954,10 +34890,6 @@ msgid "Trace Precision"
 msgstr "Přesnost Trasování"
 
 
-msgid "Size of the cubemap spheres to debug captured light"
-msgstr "Velikost sfér cubemap pro ladění zachyceného světla"
-
-
 msgid "Cubemap Size"
 msgstr "Velikost cubemapy"
 
@@ -34966,32 +34898,12 @@ msgid "Size of every cubemaps"
 msgstr "Velikost všech cubemap"
 
 
-msgid "Filter Quality"
-msgstr "Kvalita filtru"
-
-
-msgid "Take more samples during cubemap filtering to remove artifacts"
-msgstr "Odebrání více vzorků během filtrování cubemap k odstranění artefaktů"
-
-
-msgid "Size of the irradiance sample spheres to debug captured light"
-msgstr "Velikost sfér vzorku ozáření pro ladění zachyceného světla"
-
-
-msgid "Irradiance Smoothing"
-msgstr "Vyhlazení ozáření"
-
-
 msgid "Size of the shadow map applied to each irradiance sample"
 msgstr "Velikost stínové mapy použité pro každý vzorek ozáření"
 
 
 msgid "Distance of object that contribute to the ambient occlusion effect"
 msgstr "Vzdálenost objektu, která přispívá k efektu ambient occlusion"
-
-
-msgid "Factor for ambient occlusion blending"
-msgstr "Faktor pro prolnutí efektu ambient occlusion"
 
 
 msgid "Precision of the horizon search"
@@ -35018,48 +34930,12 @@ msgid "Controls accuracy of motion blur, more steps means longer render time"
 msgstr "Řídí přesnost rozostření pohybu, více kroků znamená delší dobu rendrování"
 
 
-msgid "Edge Fading"
-msgstr "Blednutí okrajů"
-
-
-msgid "Screen percentage used to fade the SSR"
-msgstr "Procento obrazovky použité ke zeslábnutí SSR"
-
-
-msgid "Max Roughness"
-msgstr "Maximální hrubost"
-
-
-msgid "Do not raytrace reflections for roughness above this value"
-msgstr "Neodrážet raytrace odrazy nad touto hodnotou hrubosti"
-
-
-msgid "Pixel thickness used to detect intersection"
-msgstr "Tloušťka obrazových bodů použitá k detekci průsečíku"
-
-
-msgid "Jitter Threshold"
-msgstr "Práh Chvění"
-
-
-msgid "Rotate samples that are below this threshold"
-msgstr "Otočit vzorky, které jsou pod touto prahovou hodnotou"
-
-
-msgid "Number of samples to compute the scattering effect"
-msgstr "Počet vzorků pro vypočítání efektu rozptylu"
-
-
 msgid "Render Samples"
 msgstr "Vzorkování renderu"
 
 
 msgid "Number of samples, unlimited if 0"
 msgstr "Počet vzorků, neomezených, pokud 0"
-
-
-msgid "High Quality Slight Defocus"
-msgstr "Vysoce Kvalitní Mírné Rozostření"
 
 
 msgid "Jitter Camera"
@@ -35070,42 +34946,6 @@ msgid "Enable ambient occlusion to simulate medium scale indirect shadowing"
 msgstr "Povolit okolní okluzi pro simulaci nepřímého stínování ve středním měřítku"
 
 
-msgid "Bent Normals"
-msgstr "Ohnout Normály"
-
-
-msgid "Bounces Approximation"
-msgstr "Odhad odrazů"
-
-
-msgid "An approximation to simulate light bounces giving less occlusion on brighter objects"
-msgstr "Odhad pro simulaci odrazů světla, které dávají méně okluze na jasnější objekty"
-
-
-msgid "High Bit Depth"
-msgstr "Vysoká Bitová Hloubka"
-
-
-msgid "Soft Shadows"
-msgstr "Měkké stíny"
-
-
-msgid "Randomize shadowmaps origin to create soft shadows"
-msgstr "Náhodný počátek stínových map a vytvoří měkké stíny"
-
-
-msgid "Enable screen space reflection"
-msgstr "Povolit screen space reflection"
-
-
-msgid "Half Res Trace"
-msgstr "Půl rozlišení raytrace"
-
-
-msgid "Raytrace at a lower resolution"
-msgstr "Raytrace s nižším rozlišením"
-
-
 msgid "Viewport Denoising"
 msgstr "Zbavení šumu ve 3D zobrazení"
 
@@ -35114,12 +34954,8 @@ msgid "Denoise image using temporal reprojection (can leave some ghosting)"
 msgstr "Zbavit se šumu na obraze pomocí dočasné reprojekce (může ponechat \"ghosting\")"
 
 
-msgid "Enable scene light interactions with volumetrics"
-msgstr "Povolit interakci osvětlení scény s volumetrií"
-
-
-msgid "Generate shadows from volumetric material (Very expensive)"
-msgstr "Generovat stíny z volumetrických materiálů (velmi drahé)"
+msgid "Volumetric Shadows"
+msgstr "Volumetrické Stíny"
 
 
 msgid "End distance of the volumetric effect"
@@ -35394,6 +35230,10 @@ msgstr "Barva textu"
 
 msgid "Outline Width"
 msgstr "Šířka obrysu"
+
+
+msgid "Shadow Color"
+msgstr "Ukázat kurzor"
 
 
 msgid "Transform Sequence"
@@ -37896,22 +37736,6 @@ msgid "Snap to all geometry"
 msgstr "Přichytit ke každé geometrii"
 
 
-msgid "Snap Node Element"
-msgstr "Prvek pro přichytávání"
-
-
-msgid "Node X"
-msgstr "Uzel"
-
-
-msgid "Node Y"
-msgstr "Uzel"
-
-
-msgid "Snap to any node border"
-msgstr "Přesunout zcela dolů"
-
-
 msgid "Snap Target"
 msgstr "Přichytit k cíli"
 
@@ -38372,6 +38196,10 @@ msgid "Walk Speed"
 msgstr "Rychlost chůze"
 
 
+msgid "Factor for ambient occlusion blending"
+msgstr "Faktor pro prolnutí efektu ambient occlusion"
+
+
 msgid "World Mist"
 msgstr "Světová Mlha"
 
@@ -38569,11 +38397,6 @@ msgstr "Editor grafů"
 msgctxt "WindowManager"
 msgid "Dopesheet"
 msgstr "Dopesheet"
-
-
-msgctxt "WindowManager"
-msgid "Timeline"
-msgstr "Časová osa"
 
 
 msgctxt "WindowManager"
@@ -39691,26 +39514,6 @@ msgstr "Minimální Velikost Kroku"
 
 msgid "Auto-Step"
 msgstr "Automaticky"
-
-
-msgid "Light Clamping"
-msgstr "Svorka Světla"
-
-
-msgid "Refraction"
-msgstr "Lom"
-
-
-msgid "Cascade Size"
-msgstr "Velikost kaskády"
-
-
-msgid "Diffuse Occlusion"
-msgstr "Difúzní okluze"
-
-
-msgid "Irradiance Size"
-msgstr "Velikost ozáření"
 
 
 msgid "Max Child Particles"
@@ -41555,11 +41358,6 @@ msgstr "Rozpustit kosti"
 
 
 msgctxt "Operator"
-msgid "Simplify"
-msgstr "Zjednodušit"
-
-
-msgctxt "Operator"
 msgid "Arrange"
 msgstr "Uspořádat"
 
@@ -41843,6 +41641,11 @@ msgstr "Název Materiálu"
 
 
 msgctxt "Operator"
+msgid "Simplify"
+msgstr "Zjednodušit"
+
+
+msgctxt "Operator"
 msgid "Set as Active Material"
 msgstr "Nastavit jako Aktivní materiál"
 
@@ -42011,10 +41814,6 @@ msgstr "Uloženo \"%s\""
 
 msgid "Loading failed: "
 msgstr "Načítaní se pokazilo: "
-
-
-msgid "Path '%s' not found"
-msgstr "Cesta '%s' nebyla nalezena"
 
 
 msgid "Scene Collection"

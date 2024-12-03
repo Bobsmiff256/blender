@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2024-04-29 13:44+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Greek <https://translate.blender.org/projects/blender-ui/ui/el/>\n"
@@ -451,10 +451,6 @@ msgid "Cube"
 msgstr "Κύβος"
 
 
-msgid "Opaque"
-msgstr "Αδιαφανής"
-
-
 msgid "Edges"
 msgstr "Ακμές"
 
@@ -551,36 +547,36 @@ msgid "Keyboard"
 msgstr "Πληκτρολόγιο"
 
 
-msgid "Snap"
-msgstr "Προσκόλληση"
-
-
-msgid "Mirror"
-msgstr "Καθρέφτισμα"
-
-
-msgid "Make Single User"
-msgstr "Ορισμός Ενός Χρήστη"
-
-
-msgid "Track"
-msgstr "Ανίχνευση"
-
-
-msgid "Apply"
-msgstr "Εφαρμογή"
-
-
-msgid "Rigid Body"
-msgstr "Rigid Body"
+msgid "Merge"
+msgstr "Συγχώνευση"
 
 
 msgid "Select Linked"
 msgstr "Επιλογή Συνδεδεμένων"
 
 
-msgid "Merge"
-msgstr "Συγχώνευση"
+msgid "Snap"
+msgstr "Προσκόλληση"
+
+
+msgid "Rigid Body"
+msgstr "Rigid Body"
+
+
+msgid "Apply"
+msgstr "Εφαρμογή"
+
+
+msgid "Track"
+msgstr "Ανίχνευση"
+
+
+msgid "Make Single User"
+msgstr "Ορισμός Ενός Χρήστη"
+
+
+msgid "Mirror"
+msgstr "Καθρέφτισμα"
 
 
 msgid "Import"

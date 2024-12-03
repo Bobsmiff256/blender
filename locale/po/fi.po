@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2024-10-16 00:56+0000\n"
 "Last-Translator: Leevi Oksanen <laavi.oksanen@gmail.com>\n"
 "Language-Team: Finnish <https://translate.blender.org/projects/blender-ui/ui/fi/>\n"
@@ -6714,10 +6714,6 @@ msgid "Roughness"
 msgstr "Karheus"
 
 
-msgid "Shadow Mode"
-msgstr "Varjotila"
-
-
 msgid "Blended"
 msgstr "Sekoitettu"
 
@@ -7431,20 +7427,36 @@ msgid "Vector Font"
 msgstr "Vektorifontti"
 
 
+msgid "Show/Hide"
+msgstr "Näytä/Piilota"
+
+
 msgid "Names"
 msgstr "Nimet"
 
 
-msgid "Random Mask"
-msgstr "Satunnainen maski"
+msgid "Select Loops"
+msgstr "Valitse silmukat"
 
 
 msgid "Mesh Select Mode"
 msgstr "Muodon valintatila"
 
 
-msgid "Show/Hide"
-msgstr "Näytä/Piilota"
+msgid "Select More/Less"
+msgstr "Valitse enemmän/vähemmän"
+
+
+msgid "Add Image"
+msgstr "Lisää kuva"
+
+
+msgid "Track"
+msgstr "Raide"
+
+
+msgid "Select Similar"
+msgstr "Valitse samankaltainen"
 
 
 msgid "UV Mapping"
@@ -7455,24 +7467,8 @@ msgid "Hooks"
 msgstr "Koukut"
 
 
-msgid "Track"
-msgstr "Raide"
-
-
-msgid "Add Image"
-msgstr "Lisää kuva"
-
-
-msgid "Select Similar"
-msgstr "Valitse samankaltainen"
-
-
-msgid "Select More/Less"
-msgstr "Valitse enemmän/vähemmän"
-
-
-msgid "Select Loops"
-msgstr "Valitse silmukat"
+msgid "Random Mask"
+msgstr "Satunnainen maski"
 
 
 msgid "Select All by Trait"
@@ -8743,6 +8739,11 @@ msgid "Float to Integer"
 msgstr "Liukuluku kokonaisluvuksi"
 
 
+msgctxt "NodeTree"
+msgid "Modulo"
+msgstr "Jakojäännös"
+
+
 msgid "Random Value"
 msgstr "Satunnainen arvo"
 
@@ -9650,11 +9651,6 @@ msgstr "Skaala"
 msgctxt "NodeTree"
 msgid "Normalize"
 msgstr "Normalisoi"
-
-
-msgctxt "NodeTree"
-msgid "Modulo"
-msgstr "Jakojäännös"
 
 
 msgid "Vector Rotate"
@@ -11686,18 +11682,6 @@ msgid "Normal Vector"
 msgstr "Normaalivektori"
 
 
-msgid "Node X"
-msgstr "X-noodi"
-
-
-msgid "Node Y"
-msgstr "Y-noodi"
-
-
-msgid "Node X / Y"
-msgstr "X / Y -noodi"
-
-
 msgid "Only Endpoints"
 msgstr "Vain Päätepisteet"
 
@@ -12399,11 +12383,6 @@ msgstr "NLA-Editori"
 msgctxt "WindowManager"
 msgid "NLA Tracks"
 msgstr "NLA-Raiteet"
-
-
-msgctxt "WindowManager"
-msgid "Timeline"
-msgstr "Aikajana"
 
 
 msgctxt "WindowManager"

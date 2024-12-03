@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 4.4.0 Alpha (b'58c660c9615d')\n"
+"Project-Id-Version: Blender 4.4.0 Alpha (b'62b2bb48e8bf')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-20 15:55+0000\n"
+"POT-Creation-Date: 2024-12-02 16:18+0000\n"
 "PO-Revision-Date: 2024-01-11 03:55+0000\n"
 "Last-Translator: Répási Dávid <hu.repasidavid@protonmail.com>\n"
 "Language-Team: Hungarian <https://translate.blender.org/projects/blender-ui/ui/hu/>\n"
@@ -6657,48 +6657,48 @@ msgid "Use Material Mask"
 msgstr "Anyagmaszk használata"
 
 
-msgid "Align View"
-msgstr "Nézet igazítása"
+msgid "Clean Up"
+msgstr "Tisztítás"
 
 
-msgid "Navigation"
-msgstr "Navigáció"
-
-
-msgid "Local View"
-msgstr "Helyi nézet"
+msgid "Merge"
+msgstr "Összefésülés"
 
 
 msgid "Show/Hide"
 msgstr "Mutat/Rejt"
 
 
-msgid "Mirror"
-msgstr "Tükrözés"
-
-
-msgid "Clean Up"
-msgstr "Tisztítás"
-
-
-msgid "Track"
-msgstr "Nyom"
-
-
-msgid "Apply"
-msgstr "Elfogadás"
-
-
-msgid "Rigid Body"
-msgstr "Szilárd test"
+msgid "Local View"
+msgstr "Helyi nézet"
 
 
 msgid "Relations"
 msgstr "Kapcsolatok"
 
 
-msgid "Merge"
-msgstr "Összefésülés"
+msgid "Rigid Body"
+msgstr "Szilárd test"
+
+
+msgid "Apply"
+msgstr "Elfogadás"
+
+
+msgid "Track"
+msgstr "Nyom"
+
+
+msgid "Navigation"
+msgstr "Navigáció"
+
+
+msgid "Mirror"
+msgstr "Tükrözés"
+
+
+msgid "Align View"
+msgstr "Nézet igazítása"
 
 
 msgctxt "MovieClip"
@@ -10084,10 +10084,6 @@ msgid "Bend"
 msgstr "Hajlítás"
 
 
-msgid "Grease Pencil Shrink/Fatten"
-msgstr "Zsírkréta zsugorítás/hízlalás"
-
-
 msgid "Grease Pencil Opacity"
 msgstr "Zsírkréta átlátszatlanság"
 
@@ -13082,10 +13078,6 @@ msgid "Deactivation"
 msgstr "Deaktiválás"
 
 
-msgid "Indirect Lighting"
-msgstr "Indirekt megvilágítás"
-
-
 msgid "Shadows"
 msgstr "Árnyékok"
 
@@ -14398,10 +14390,6 @@ msgid "Reduce extra velocity that can build up when objects collide (lowers simu
 msgstr "Extra sebesség csökkentése, ami termelődhet az objektumok ütözésekor (alacsonyabb szimulációs stabilitás, csak akkor ajánlott, ha feltétlenül szükséges)"
 
 
-msgid "Factor for ambient occlusion blending"
-msgstr "Faktor a Környezeti elnyelődés keveréséhez"
-
-
 msgid "Alpha Under"
 msgstr "Alfa takarás"
 
@@ -15259,6 +15247,10 @@ msgid "Render stylized strokes in this Layer"
 msgstr "A rétegen lévő stilizált vonások renderelése"
 
 
+msgid "Factor for ambient occlusion blending"
+msgstr "Faktor a Környezeti elnyelődés keveréséhez"
+
+
 msgid "Length of rays, defines how far away other faces give occlusion effect"
 msgstr "Sugarak hossza, meghatározza, milyen távol adjanak más oldallapok elnyelődés effektet"
 
@@ -15422,11 +15414,6 @@ msgstr "Kulcstábla"
 msgctxt "WindowManager"
 msgid "NLA Editor"
 msgstr "Akciószerkesztő (NLA)"
-
-
-msgctxt "WindowManager"
-msgid "Timeline"
-msgstr "Idővonal"
 
 
 msgctxt "WindowManager"
@@ -15832,10 +15819,6 @@ msgstr "Ecset hozzáadás"
 
 msgid "Surface Thickness"
 msgstr "Felületvastagság"
-
-
-msgid "Refraction"
-msgstr "Fénytörés"
 
 
 msgid "Paths:"
@@ -16505,10 +16488,6 @@ msgstr "kényszer"
 
 msgid "Col"
 msgstr "Szín"
-
-
-msgid "TexturedCol"
-msgstr "Textúrázott szín"
 
 
 msgctxt "Brush"

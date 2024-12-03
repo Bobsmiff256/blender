@@ -25,14 +25,6 @@ set(INC
   ../compositor/realtime_compositor/cached_resources
   ../windowmanager
 
-  # For shader includes
-  engines/eevee_next/shaders
-  engines/workbench/shaders
-  engines/overlay/shaders
-  intern/shaders
-  ../gpu/shaders/common
-  ../gpu/shaders
-
   ../../../intern/opensubdiv
 )
 
@@ -76,7 +68,6 @@ set(SRC
   intern/draw_attributes.cc
   intern/draw_cache_impl_curve.cc
   intern/draw_cache_impl_curves.cc
-  intern/draw_cache_impl_gpencil_legacy.cc
   intern/draw_cache_impl_grease_pencil.cc
   intern/draw_cache_impl_lattice.cc
   intern/draw_cache_impl_mesh.cc
@@ -115,6 +106,7 @@ set(SRC
   engines/basic/basic_shader.cc
   engines/compositor/compositor_engine.cc
   engines/image/image_engine.cc
+  engines/image/image_drawing_mode.cc
   engines/image/image_shader.cc
   engines/eevee_next/eevee_ambient_occlusion.cc
   engines/eevee_next/eevee_camera.cc
@@ -182,7 +174,6 @@ set(SRC
   engines/overlay/overlay_extra.cc
   engines/overlay/overlay_facing.cc
   engines/overlay/overlay_fade.cc
-  engines/overlay/overlay_gpencil_legacy.cc
   engines/overlay/overlay_grease_pencil.cc
   engines/overlay/overlay_grid.cc
   engines/overlay/overlay_image.cc
@@ -286,9 +277,10 @@ set(SRC
   engines/image/image_drawing_mode.hh
   engines/image/image_engine.h
   engines/image/image_enums.hh
-  engines/image/image_instance_data.hh
+  engines/image/image_state.hh
   engines/image/image_partial_updater.hh
   engines/image/image_private.hh
+  engines/image/image_shader.hh
   engines/image/image_shader_params.hh
   engines/image/image_space.hh
   engines/image/image_space_image.hh
@@ -298,7 +290,9 @@ set(SRC
   engines/overlay/overlay_engine.h
   engines/overlay/overlay_next_antialiasing.hh
   engines/overlay/overlay_next_armature.hh
+  engines/overlay/overlay_next_attribute_text.hh
   engines/overlay/overlay_next_attribute_viewer.hh
+  engines/overlay/overlay_next_axes.hh
   engines/overlay/overlay_next_background.hh
   engines/overlay/overlay_next_bounds.hh
   engines/overlay/overlay_next_camera.hh
@@ -320,6 +314,7 @@ set(SRC
   engines/overlay/overlay_next_metaball.hh
   engines/overlay/overlay_next_mode_transfer.hh
   engines/overlay/overlay_next_motion_path.hh
+  engines/overlay/overlay_next_name.hh
   engines/overlay/overlay_next_origin.hh
   engines/overlay/overlay_next_outline.hh
   engines/overlay/overlay_next_paint.hh
@@ -579,7 +574,6 @@ set(GLSL_SRC
   intern/shaders/common_fullscreen_vert.glsl
   intern/shaders/common_fxaa_lib.glsl
   intern/shaders/common_gpencil_lib.glsl
-  intern/shaders/common_grease_pencil_lib.glsl
   intern/shaders/common_hair_lib.glsl
   intern/shaders/common_hair_refine_comp.glsl
   intern/shaders/common_intersect_lib.glsl
@@ -604,10 +598,13 @@ set(GLSL_SRC
   intern/shaders/draw_command_generate_comp.glsl
   intern/shaders/draw_debug_draw_display_frag.glsl
   intern/shaders/draw_debug_draw_display_vert.glsl
+  intern/shaders/draw_grease_pencil_lib.glsl
   intern/shaders/draw_intersect_lib.glsl
   intern/shaders/draw_math_geom_lib.glsl
   intern/shaders/draw_model_lib.glsl
+  intern/shaders/draw_pointcloud_lib.glsl
   intern/shaders/draw_resource_finalize_comp.glsl
+  intern/shaders/draw_view_clipping_lib.glsl
   intern/shaders/draw_view_finalize_comp.glsl
   intern/shaders/draw_view_lib.glsl
   intern/shaders/draw_view_reconstruction_lib.glsl
@@ -840,6 +837,7 @@ if(WITH_DRAW_DEBUG)
 endif()
 
 if(WITH_OPENSUBDIV)
+  add_definitions(-DWITH_OPENSUBDIV)
   list(APPEND INC_SYS
     ${OPENSUBDIV_INCLUDE_DIRS}
   )
