@@ -80,6 +80,7 @@ struct bNodeLink;
 struct bNodePreview;
 struct bNode;
 struct NodeEnumDefinition;
+struct NodeEquationItems;
 
 #define NODE_MAXSTR 64
 
@@ -2169,11 +2170,37 @@ typedef struct NodeGeometryBake {
   char _pad[4];
 } NodeGeometryBake;
 
-typedef struct NodeFunctionEquation {
-  int32_t *byte_code;  // pointer to byte code compiled from equation
-  int32_t hash;        // hash of the string that was compiled
-  int32_t stack_size;  // Number of ints of stack needed by bytecode
-};
+typedef struct NodeEquationItem {
+  char *name;
+  /** #eNodeSocketDatatype. */
+  short socket_type;
+  char _pad[2];
+  /**
+   * Generated unique identifier for sockets which stays the same even when the item order or
+   * names change.
+   */
+  int identifier;
+} NodeEquationItem;
+
+typedef struct NodeEquationItems {
+  /* User-defined enum items owned and managed by this node. */
+  NodeEquationItem *items_array;
+  int items_num;
+  int active_index;
+  uint32_t next_identifier;
+  char _pad[4];
+
+#ifdef __cplusplus
+  blender::Span<NodeEquationItem> items() const;
+  blender::MutableSpan<NodeEquationItem> items();
+#endif
+} NodeEquationItems;
+
+typedef struct NodeGeometryEquation {
+  NodeEquationItems socket_items;
+  uint8_t output_type;
+  char _pad[7];
+} NodeGeometryEquation;
 
 /* script node mode */
 enum {

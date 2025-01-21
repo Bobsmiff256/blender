@@ -85,6 +85,7 @@
 #include "NOD_composite.hh"
 #include "NOD_geo_bake.hh"
 #include "NOD_geo_capture_attribute.hh"
+#include "NOD_geo_equation.hh"
 #include "NOD_geo_foreach_geometry_element.hh"
 #include "NOD_geo_index_switch.hh"
 #include "NOD_geo_menu_switch.hh"
@@ -895,6 +896,10 @@ void node_tree_blend_write(BlendWriter *writer, bNodeTree *ntree)
       nodes::socket_items::blend_write<nodes::ForeachGeometryElementMainItemsAccessor>(writer,
                                                                                        *node);
     }
+
+    if (node->type == GEO_NODE_EQUATION) {
+      nodes::socket_items::blend_write<nodes::EquationItemsAccessor>(writer, *node);
+    }
   }
 
   LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
@@ -1192,165 +1197,169 @@ void node_tree_blend_read_data(BlendDataReader *reader, ID *owner_id, bNodeTree 
                                                                                      *node);
           break;
         }
+        case GEO_NODE_EQUATION: {
+          nodes::socket_items::blend_read_data<nodes::EquationItemsAccessor>(reader, *node);
+          break;
+        }
 
         default:
           break;
+        }
       }
     }
-  }
-  BLO_read_struct_list(reader, bNodeLink, &ntree->links);
-  BLI_assert(ntree->all_nodes().size() == BLI_listbase_count(&ntree->nodes));
+    BLO_read_struct_list(reader, bNodeLink, &ntree->links);
+    BLI_assert(ntree->all_nodes().size() == BLI_listbase_count(&ntree->nodes));
 
-  /* and we connect the rest */
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-    BLO_read_struct(reader, bNode, &node->parent);
-
-    LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->inputs) {
-      direct_link_node_socket(reader, sock);
-    }
-    LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->outputs) {
-      direct_link_node_socket(reader, sock);
-    }
-
-    /* Socket storage. */
-    if (node->type == CMP_NODE_OUTPUT_FILE) {
-      LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
-        NodeImageMultiFileSocket *sockdata = static_cast<NodeImageMultiFileSocket *>(
-            sock->storage);
-        BKE_image_format_blend_read_data(reader, &sockdata->format);
-      }
-    }
-  }
-
-  /* Read legacy interface socket lists for versioning. */
-  BLO_read_struct_list(reader, bNodeSocket, &ntree->inputs_legacy);
-  BLO_read_struct_list(reader, bNodeSocket, &ntree->outputs_legacy);
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &ntree->inputs_legacy) {
-    direct_link_node_socket(reader, sock);
-  }
-  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &ntree->outputs_legacy) {
-    direct_link_node_socket(reader, sock);
-  }
-
-  ntree->tree_interface.read_data(reader);
-
-  LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
-    BLO_read_struct(reader, bNode, &link->fromnode);
-    BLO_read_struct(reader, bNode, &link->tonode);
-    BLO_read_struct(reader, bNodeSocket, &link->fromsock);
-    BLO_read_struct(reader, bNodeSocket, &link->tosock);
-  }
-
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-    remove_unsupported_sockets(&node->inputs, &ntree->links);
-    remove_unsupported_sockets(&node->outputs, &ntree->links);
-  }
-  remove_unsupported_sockets(&ntree->inputs_legacy, nullptr);
-  remove_unsupported_sockets(&ntree->outputs_legacy, nullptr);
-
-  BLO_read_struct(reader, GeometryNodeAssetTraits, &ntree->geometry_node_asset_traits);
-  BLO_read_struct_array(
-      reader, bNestedNodeRef, ntree->nested_node_refs_num, &ntree->nested_node_refs);
-
-  /* TODO: should be dealt by new generic cache handling of IDs... */
-  ntree->previews = nullptr;
-
-  BLO_read_struct(reader, PreviewImage, &ntree->preview);
-  BKE_previewimg_blend_read(reader, ntree->preview);
-
-  /* type verification is in lib-link */
-}
-
-static void ntree_blend_read_data(BlendDataReader *reader, ID *id)
-{
-  bNodeTree *ntree = reinterpret_cast<bNodeTree *>(id);
-  node_tree_blend_read_data(reader, nullptr, ntree);
-}
-
-static void ntree_blend_read_after_liblink(BlendLibReader *reader, ID *id)
-{
-  bNodeTree *ntree = reinterpret_cast<bNodeTree *>(id);
-
-  /* Set `node->typeinfo` pointers. This is done in lib linking, after the
-   * first versioning that can change types still without functions that
-   * update the `typeinfo` pointers. Versioning after lib linking needs
-   * these top be valid. */
-  node_tree_set_type(nullptr, ntree);
-
-  /* For nodes with static socket layout, add/remove sockets as needed
-   * to match the static layout. */
-  if (!BLO_read_lib_is_undo(reader)) {
+    /* and we connect the rest */
     LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-      /* Don't update node groups here because they may depend on other node groups which are not
-       * fully versioned yet and don't have `typeinfo` pointers set. */
-      if (!node->is_group()) {
-        node_verify_sockets(ntree, node, false);
+      BLO_read_struct(reader, bNode, &node->parent);
+
+      LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->inputs) {
+        direct_link_node_socket(reader, sock);
+      }
+      LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->outputs) {
+        direct_link_node_socket(reader, sock);
+      }
+
+      /* Socket storage. */
+      if (node->type == CMP_NODE_OUTPUT_FILE) {
+        LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
+          NodeImageMultiFileSocket *sockdata = static_cast<NodeImageMultiFileSocket *>(
+              sock->storage);
+          BKE_image_format_blend_read_data(reader, &sockdata->format);
+        }
+      }
+    }
+
+    /* Read legacy interface socket lists for versioning. */
+    BLO_read_struct_list(reader, bNodeSocket, &ntree->inputs_legacy);
+    BLO_read_struct_list(reader, bNodeSocket, &ntree->outputs_legacy);
+    LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &ntree->inputs_legacy) {
+      direct_link_node_socket(reader, sock);
+    }
+    LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &ntree->outputs_legacy) {
+      direct_link_node_socket(reader, sock);
+    }
+
+    ntree->tree_interface.read_data(reader);
+
+    LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
+      BLO_read_struct(reader, bNode, &link->fromnode);
+      BLO_read_struct(reader, bNode, &link->tonode);
+      BLO_read_struct(reader, bNodeSocket, &link->fromsock);
+      BLO_read_struct(reader, bNodeSocket, &link->tosock);
+    }
+
+    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+      remove_unsupported_sockets(&node->inputs, &ntree->links);
+      remove_unsupported_sockets(&node->outputs, &ntree->links);
+    }
+    remove_unsupported_sockets(&ntree->inputs_legacy, nullptr);
+    remove_unsupported_sockets(&ntree->outputs_legacy, nullptr);
+
+    BLO_read_struct(reader, GeometryNodeAssetTraits, &ntree->geometry_node_asset_traits);
+    BLO_read_struct_array(
+        reader, bNestedNodeRef, ntree->nested_node_refs_num, &ntree->nested_node_refs);
+
+    /* TODO: should be dealt by new generic cache handling of IDs... */
+    ntree->previews = nullptr;
+
+    BLO_read_struct(reader, PreviewImage, &ntree->preview);
+    BKE_previewimg_blend_read(reader, ntree->preview);
+
+    /* type verification is in lib-link */
+  }
+
+  static void ntree_blend_read_data(BlendDataReader * reader, ID * id)
+  {
+    bNodeTree *ntree = reinterpret_cast<bNodeTree *>(id);
+    node_tree_blend_read_data(reader, nullptr, ntree);
+  }
+
+  static void ntree_blend_read_after_liblink(BlendLibReader * reader, ID * id)
+  {
+    bNodeTree *ntree = reinterpret_cast<bNodeTree *>(id);
+
+    /* Set `node->typeinfo` pointers. This is done in lib linking, after the
+     * first versioning that can change types still without functions that
+     * update the `typeinfo` pointers. Versioning after lib linking needs
+     * these top be valid. */
+    node_tree_set_type(nullptr, ntree);
+
+    /* For nodes with static socket layout, add/remove sockets as needed
+     * to match the static layout. */
+    if (!BLO_read_lib_is_undo(reader)) {
+      LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+        /* Don't update node groups here because they may depend on other node groups which are not
+         * fully versioned yet and don't have `typeinfo` pointers set. */
+        if (!node->is_group()) {
+          node_verify_sockets(ntree, node, false);
+        }
       }
     }
   }
-}
 
-void node_update_asset_metadata(bNodeTree &node_tree)
-{
-  AssetMetaData *asset_data = node_tree.id.asset_data;
-  if (!asset_data) {
-    return;
-  }
+  void node_update_asset_metadata(bNodeTree & node_tree)
+  {
+    AssetMetaData *asset_data = node_tree.id.asset_data;
+    if (!asset_data) {
+      return;
+    }
 
-  BKE_asset_metadata_idprop_ensure(asset_data, idprop::create("type", node_tree.type).release());
-  auto inputs = idprop::create_group("inputs");
-  auto outputs = idprop::create_group("outputs");
-  node_tree.ensure_interface_cache();
-  for (const bNodeTreeInterfaceSocket *socket : node_tree.interface_inputs()) {
-    auto prop = idprop::create(socket->name ? socket->name : "", socket->socket_type).release();
-    if (!IDP_AddToGroup(inputs.get(), prop)) {
-      IDP_FreeProperty(prop);
+    BKE_asset_metadata_idprop_ensure(asset_data, idprop::create("type", node_tree.type).release());
+    auto inputs = idprop::create_group("inputs");
+    auto outputs = idprop::create_group("outputs");
+    node_tree.ensure_interface_cache();
+    for (const bNodeTreeInterfaceSocket *socket : node_tree.interface_inputs()) {
+      auto prop = idprop::create(socket->name ? socket->name : "", socket->socket_type).release();
+      if (!IDP_AddToGroup(inputs.get(), prop)) {
+        IDP_FreeProperty(prop);
+      }
+    }
+    for (const bNodeTreeInterfaceSocket *socket : node_tree.interface_outputs()) {
+      auto prop = idprop::create(socket->name ? socket->name : "", socket->socket_type).release();
+      if (!IDP_AddToGroup(outputs.get(), prop)) {
+        IDP_FreeProperty(prop);
+      }
+    }
+    BKE_asset_metadata_idprop_ensure(asset_data, inputs.release());
+    BKE_asset_metadata_idprop_ensure(asset_data, outputs.release());
+    if (node_tree.geometry_node_asset_traits) {
+      auto property = idprop::create("geometry_node_asset_traits_flag",
+                                     node_tree.geometry_node_asset_traits->flag);
+      BKE_asset_metadata_idprop_ensure(asset_data, property.release());
     }
   }
-  for (const bNodeTreeInterfaceSocket *socket : node_tree.interface_outputs()) {
-    auto prop = idprop::create(socket->name ? socket->name : "", socket->socket_type).release();
-    if (!IDP_AddToGroup(outputs.get(), prop)) {
-      IDP_FreeProperty(prop);
+
+  static void node_tree_asset_pre_save(void *asset_ptr, AssetMetaData * /*asset_data*/)
+  {
+    bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
+    node_update_asset_metadata(ntree);
+  }
+
+  static void node_tree_asset_on_mark_asset(void *asset_ptr, AssetMetaData *asset_data)
+  {
+    bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
+    node_update_asset_metadata(ntree);
+
+    /* Copy node tree description to asset description so that the user does not have to write it
+     * again. */
+    if (!asset_data->description) {
+      asset_data->description = BLI_strdup_null(ntree.description);
     }
   }
-  BKE_asset_metadata_idprop_ensure(asset_data, inputs.release());
-  BKE_asset_metadata_idprop_ensure(asset_data, outputs.release());
-  if (node_tree.geometry_node_asset_traits) {
-    auto property = idprop::create("geometry_node_asset_traits_flag",
-                                   node_tree.geometry_node_asset_traits->flag);
-    BKE_asset_metadata_idprop_ensure(asset_data, property.release());
+
+  static void node_tree_asset_on_clear_asset(void *asset_ptr, AssetMetaData *asset_data)
+  {
+    bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
+
+    /* Copy asset description to node tree description so that it is not lost when the asset data
+     * is removed. */
+    if (asset_data->description) {
+      MEM_SAFE_FREE(ntree.description);
+      ntree.description = BLI_strdup_null(asset_data->description);
+    }
   }
-}
-
-static void node_tree_asset_pre_save(void *asset_ptr, AssetMetaData * /*asset_data*/)
-{
-  bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
-  node_update_asset_metadata(ntree);
-}
-
-static void node_tree_asset_on_mark_asset(void *asset_ptr, AssetMetaData *asset_data)
-{
-  bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
-  node_update_asset_metadata(ntree);
-
-  /* Copy node tree description to asset description so that the user does not have to write it
-   * again. */
-  if (!asset_data->description) {
-    asset_data->description = BLI_strdup_null(ntree.description);
-  }
-}
-
-static void node_tree_asset_on_clear_asset(void *asset_ptr, AssetMetaData *asset_data)
-{
-  bNodeTree &ntree = *static_cast<bNodeTree *>(asset_ptr);
-
-  /* Copy asset description to node tree description so that it is not lost when the asset data is
-   * removed. */
-  if (asset_data->description) {
-    MEM_SAFE_FREE(ntree.description);
-    ntree.description = BLI_strdup_null(asset_data->description);
-  }
-}
 
 }  // namespace blender::bke
 

@@ -12,6 +12,10 @@ set(INC
   ../../functions
   ../../makesrna
   ../../windowmanager
+  ../../blenloader
+
+    # RNA_prototypes.hh
+  ${CMAKE_BINARY_DIR}/source/blender/makesrna
 )
 
 set(INC_SYS
@@ -27,7 +31,6 @@ set(SRC
   nodes/node_fn_combine_matrix.cc
   nodes/node_fn_combine_transform.cc
   nodes/node_fn_compare.cc
-  nodes/node_fn_equation.cc
   nodes/node_fn_euler_to_rotation.cc
   nodes/node_fn_float_to_int.cc
   nodes/node_fn_hash_value.cc

@@ -72,6 +72,8 @@
 
 #include "BLI_string_utils.hh"
 
+// #include "NOD_geo_equation.hh"
+
 const EnumPropertyItem rna_enum_node_socket_in_out_items[] = {{SOCK_IN, "IN", 0, "Input", ""},
                                                               {SOCK_OUT, "OUT", 0, "Output", ""},
                                                               {0, nullptr, 0, nullptr, nullptr}};
@@ -639,6 +641,7 @@ static const EnumPropertyItem node_cryptomatte_layer_name_items[] = {
 #  include "NOD_composite.hh"
 #  include "NOD_geo_bake.hh"
 #  include "NOD_geo_capture_attribute.hh"
+#  include "NOD_geo_equation.hh"
 #  include "NOD_geo_foreach_geometry_element.hh"
 #  include "NOD_geo_index_switch.hh"
 #  include "NOD_geo_menu_switch.hh"
@@ -4242,6 +4245,23 @@ static PointerRNA rna_NodeMenuSwitch_enum_definition_get(PointerRNA *ptr)
   /* Return node itself. The data is now directly available on the node and does not have to be
    * accessed through "enum_definition". */
   return *ptr;
+}
+
+static NodeEquationItem *rna_NodeEquationItems_new(ID *id,
+                                                   bNode *node,
+                                                   Main *bmain,
+                                                   const char *name)
+{
+  eNodeSocketDatatype data_type = eNodeSocketDatatype::SOCK_FLOAT;
+  NodeEquationItem *new_item = blender::nodes::socket_items::add_item_with_socket_type_and_name<
+      blender::nodes::EquationItemsAccessor>(*node, data_type, name);
+
+  bNodeTree *ntree = reinterpret_cast<bNodeTree *>(id);
+  BKE_ntree_update_tag_node_property(ntree, node);
+  ED_node_tree_propagate_change(nullptr, bmain, ntree);
+  WM_main_add_notifier(NC_NODE | NA_EDITED, ntree);
+
+  return new_item;
 }
 
 #else
@@ -10448,6 +10468,100 @@ static void def_geo_menu_switch(StructRNA *srna)
                            "exists for backward compatibility.");
 }
 
+static void rna_def_equation_item(BlenderRNA *brna)
+{
+  PropertyRNA *prop;
+
+  StructRNA *srna = RNA_def_struct(brna, "NodeEquationItem", nullptr);
+  RNA_def_struct_ui_text(srna, "Equation Item", "");
+
+#  if true
+  RNA_def_struct_sdna(srna, "NodeEquationItem");
+  rna_def_node_item_array_socket_item_common(srna, "blender::nodes::EquationItemsAccessor", true);
+#  else
+  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
+  RNA_def_property_string_funcs(
+      prop,
+      nullptr,
+      nullptr,
+      "rna_Node_ItemArray_item_name_set<blender::nodes::EquationItemsAccessor>");
+  RNA_def_property_ui_text(prop, "Name", "");
+  RNA_def_struct_name_property(srna, prop);
+  RNA_def_property_update(prop,
+                          NC_NODE | NA_EDITED,
+                          "rna_Node_ItemArray_item_update<blender::nodes::EquationItemsAccessor>");
+/*
+prop = RNA_def_property(srna, "description", PROP_STRING, PROP_NONE);
+RNA_def_property_string_sdna(prop, nullptr, "description");
+RNA_def_property_ui_text(prop, "Description", "");
+RNA_def_property_update(
+    prop, NC_NODE | NA_EDITED,
+"rna_Node_ItemArray_item_update<blender::nodes::EquationItemsAccessor>");
+*/
+#  endif
+}
+
+static void rna_def_equation_items(BlenderRNA *brna)
+{
+  StructRNA *srna;
+
+  srna = RNA_def_struct(brna, "NodeEquationItems", nullptr);
+  RNA_def_struct_sdna(srna, "bNode");
+  RNA_def_struct_ui_text(srna, "Equation Definition Items", "Collection of inputs to an equation");
+
+#  if false
+  rna_def_node_item_array_new_with_socket_and_name(srna, "EquationItem", "blender::nodes::EquationItemsAccessor");
+  rna_def_node_item_array_common_functions(srna, "EquationItem", "blender::nodes::EquationItemsAccessor");
+#  else
+  PropertyRNA *parm;
+  FunctionRNA *func;
+
+  func = RNA_def_function(srna, "new", "rna_NodeEquationItems_new");
+  RNA_def_function_ui_description(func, "Add an a new enum item");
+  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  parm = RNA_def_string(func, "name", nullptr, MAX_NAME, "Name", "");
+  RNA_def_parameter_flags(parm, PropertyFlag(0), PARM_REQUIRED);
+  /* return value */
+  parm = RNA_def_pointer(func, "item", "NodeEquationItem", "Item", "New item");
+  RNA_def_function_return(func, parm);
+
+  rna_def_node_item_array_common_functions(
+      srna, "NodeEquationItem", "blender::nodes::EquationItemsAccessor");
+#  endif
+}
+
+static void rna_def_geo_equation(StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  RNA_def_struct_sdna_from(srna, "NodeGeometryEquation", "storage");
+
+  prop = RNA_def_property(srna, "equation_items", PROP_COLLECTION, PROP_NONE);
+  RNA_def_property_collection_sdna(
+      prop, nullptr, "socket_items.items_array", "socket_items.items_num");
+  RNA_def_property_struct_type(prop, "NodeEquationItem");
+  RNA_def_property_ui_text(prop, "Items", "");
+  RNA_def_property_srna(prop, "NodeEquationItems");
+
+  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
+  RNA_def_property_int_sdna(prop, nullptr, "socket_items.active_index");
+  RNA_def_property_ui_text(prop, "Active Item Index", "Index of the active item");
+  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  RNA_def_property_update(prop, NC_NODE, nullptr);
+
+  prop = RNA_def_property(srna, "active_item", PROP_POINTER, PROP_NONE);
+  RNA_def_property_struct_type(prop, "NodeEquationItem");
+  RNA_def_property_pointer_funcs(
+      prop,
+      "rna_Node_ItemArray_active_get<blender::nodes::EquationItemsAccessor>",
+      "rna_Node_ItemArray_active_set<blender::nodes::EquationItemsAccessor>",
+      nullptr,
+      nullptr);
+  RNA_def_property_flag(prop, PROP_EDITABLE);
+  RNA_def_property_ui_text(prop, "Active Item", "Active item");
+  RNA_def_property_update(prop, NC_NODE, nullptr);
+}
+
 static void rna_def_shader_node(BlenderRNA *brna)
 {
   StructRNA *srna;
@@ -11611,6 +11725,8 @@ void RNA_def_nodetree(BlenderRNA *brna)
   rna_def_geo_foreach_geometry_element_generation_item(brna);
   rna_def_index_switch_item(brna);
   rna_def_menu_switch_item(brna);
+  rna_def_equation_item(brna);
+  rna_def_equation_items(brna);
   rna_def_geo_bake_item(brna);
   rna_def_geo_capture_attribute_item(brna);
 

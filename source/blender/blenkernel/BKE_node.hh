@@ -1379,6 +1379,7 @@ void node_tree_remove_layer_n(bNodeTree *ntree, Scene *scene, int layer_index);
 #define GEO_NODE_FOREACH_GEOMETRY_ELEMENT_INPUT 2148
 #define GEO_NODE_FOREACH_GEOMETRY_ELEMENT_OUTPUT 2149
 #define GEO_NODE_MERGE_LAYERS 2150
+#define GEO_NODE_EQUATION 2151
 
 /** \} */
 
@@ -1430,7 +1431,7 @@ void node_tree_remove_layer_n(bNodeTree *ntree, Scene *scene, int layer_index);
 #define FN_NODE_HASH_VALUE 1245
 #define FN_NODE_INTEGER_MATH 1246
 #define FN_NODE_MATRIX_DETERMINANT 1247
-#define FN_NODE_EQUATION 1248
+// #define FN_NODE_EQUATION 1248
 
 /** \} */
 
