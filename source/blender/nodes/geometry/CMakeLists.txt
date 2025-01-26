@@ -72,6 +72,7 @@ set(SRC
   nodes/node_geo_edges_to_face_groups.cc
   nodes/node_geo_evaluate_at_index.cc
   nodes/node_geo_evaluate_on_domain.cc
+  nodes/node_geo_expression.cc
   nodes/node_geo_extrude_mesh.cc
   nodes/node_geo_flip_faces.cc
   nodes/node_geo_foreach_geometry_element.cc
@@ -224,6 +225,7 @@ set(SRC
 
   include/NOD_geo_bake.hh
   include/NOD_geo_capture_attribute.hh
+  include/NOD_geo_expression.hh
   include/NOD_geo_foreach_geometry_element.hh
   include/NOD_geo_index_switch.hh
   include/NOD_geo_menu_switch.hh

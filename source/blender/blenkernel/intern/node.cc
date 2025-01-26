@@ -88,6 +88,7 @@
 #include "NOD_composite.hh"
 #include "NOD_geo_bake.hh"
 #include "NOD_geo_capture_attribute.hh"
+#include "NOD_geo_expression.hh"
 #include "NOD_geo_foreach_geometry_element.hh"
 #include "NOD_geo_index_switch.hh"
 #include "NOD_geo_menu_switch.hh"
@@ -921,6 +922,9 @@ void node_tree_blend_write(BlendWriter *writer, bNodeTree *ntree)
       nodes::socket_items::blend_write<nodes::ForeachGeometryElementMainItemsAccessor>(writer,
                                                                                        *node);
     }
+    if (node->is_type("GeometryNodeExpression")) {
+      nodes::socket_items::blend_write<nodes::ExpressionItemsAccessor>(writer, *node);
+    }
   }
 
   LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
@@ -1219,6 +1223,11 @@ void node_tree_blend_read_data(BlendDataReader *reader, ID *owner_id, bNodeTree 
         }
 
         default:
+          if (node->is_type("GeometryNodeExpression")) {
+            nodes::socket_items::blend_read_data<nodes::ExpressionItemsAccessor>(reader, *node);
+            break;
+          }
+
           break;
       }
     }

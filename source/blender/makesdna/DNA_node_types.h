@@ -81,6 +81,7 @@ struct bNodeLink;
 struct bNodePreview;
 struct bNode;
 struct NodeEnumDefinition;
+struct NodeExpressionItems;
 
 #define NODE_MAXSTR 64
 
@@ -2215,6 +2216,34 @@ typedef struct NodeGeometryBake {
   int active_index;
   char _pad[4];
 } NodeGeometryBake;
+
+typedef struct NodeExpressionItem {
+  char *name;
+  char *description;
+  int identifier;
+  short socket_type;
+  char _pad[2];
+} NodeExpressionItem;
+
+typedef struct NodeExpressionItems {
+  /* User-defined enum items owned and managed by this node. */
+  NodeExpressionItem *items_array;
+  int items_num;
+  int active_index;
+  uint32_t next_identifier;
+  char _pad[4];
+
+#ifdef __cplusplus
+  blender::Span<NodeExpressionItem> items() const;
+  blender::MutableSpan<NodeExpressionItem> items();
+#endif
+} NodeExpressionItems;
+
+typedef struct NodeGeometryExpression {
+  NodeExpressionItems socket_items;
+  uint8_t output_type;
+  char _pad[7];
+} NodeGeometryExpression;
 
 /* script node mode */
 enum {
