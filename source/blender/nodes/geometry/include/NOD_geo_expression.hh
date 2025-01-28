@@ -24,15 +24,15 @@ struct ExpressionItemsAccessor {
   static constexpr bool has_name = true;
   static constexpr bool has_single_identifier_str = true;
   struct operator_idnames {
-    static constexpr const char *add_item = "NODE_OT_Expression_item_add";
-    static constexpr const char *remove_item = "NODE_OT_Expression_item_remove";
-    static constexpr const char *move_item = "NODE_OT_Expression_item_move";
+    static constexpr const char *add_item = "NODE_OT_expression_item_add";
+    static constexpr const char *remove_item = "NODE_OT_expression_item_remove";
+    static constexpr const char *move_item = "NODE_OT_expression_item_move";
   };
   struct ui_idnames {
-    static constexpr const char *list = "NODE_UL_Expression_items";
+    static constexpr const char *list = "NODE_UL_expression_items";
   };
   struct rna_names {
-    static constexpr const char *items = "Expression_items";
+    static constexpr const char *items = "expression_items";
     static constexpr const char *active_index = "active_index";
   };
 
@@ -61,13 +61,13 @@ struct ExpressionItemsAccessor {
     dst = src;
     dst.name = BLI_strdup_null(dst.name);
     dst.socket_type = dst.socket_type;
-    //    dst.description = BLI_strdup_null(dst.description);
+    dst.description = BLI_strdup_null(dst.description);
   }
 
   static void destruct_item(NodeExpressionItem *item)
   {
     MEM_SAFE_FREE(item->name);
-    //    MEM_SAFE_FREE(item->description);
+    MEM_SAFE_FREE(item->description);
   }
 
   static void blend_write_item(BlendWriter *writer, const ItemT &item);
@@ -81,15 +81,6 @@ struct ExpressionItemsAccessor {
   {
     return &item.name;
   }
-
-  /*
-  static void init_with_name(bNode &node, NodeEnumItem &item, const char *name)
-  {
-    auto *storage = static_cast<NodeExpreesion *>(node.storage);
-    item.identifier = storage->enum_definition.next_identifier++;
-    socket_items::set_item_name_and_make_unique<ExpressionItemsAccessor>(node, item, name);
-  }
-  */
 
   static void init_with_socket_type_and_name(bNode &node,
                                              NodeExpressionItem &item,
