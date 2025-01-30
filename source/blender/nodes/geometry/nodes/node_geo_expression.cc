@@ -2,9 +2,6 @@
  *
  * SPDX-License-Identifier: GPL-2.0-or-later */
 
-// TODO
-// Fix up execute_program to have a runtime stack class
-
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
 
@@ -20,9 +17,11 @@
 //  #include "UI_resources.hh"
 #include "NOD_socket_items_ui.hh"
 #include "NOD_socket_search_link.hh"
+#include "corecrt_math_defines.h"
 
 #include "BLO_read_write.hh"
 #include <charconv>
+#include <locale.h>
 #include <stdint.h>
 
 #include "RNA_enum_types.hh"
@@ -71,6 +70,8 @@ struct Token {
     OPERATOR_DIVIDE_VEC_FLOAT,
     OPERATOR_POWER,
     OPERATOR_POWER_INT,
+    OPERATOR_MODULO,
+    OPERATOR_MODULO_INT,
     FIRST_POSTFIX_OPERATOR,
     OPERATOR_GET_MEMBER_VEC = FIRST_POSTFIX_OPERATOR,
     // Functions
@@ -78,8 +79,15 @@ struct Token {
     FUNCTION_SQUARE_ROOT = FIRST_FUNCTION,
     FUNCTION_SINE,
     FUNCTION_COSINE,
+    FUNCTION_TANGENT,
+    FUNCTION_ASIN,
+    FUNCTION_ACOS,
+    FUNCTION_ATAN,
+    FUNCTION_ATAN2,
     FUNCTION_MAX,
     FUNCTION_MAX_INT,
+    FUNCTION_MIN,
+    FUNCTION_MIN_INT,
     CONVERT_INT_FLOAT,
     CONVERT_FLOAT_INT,
     NUM
@@ -193,13 +201,22 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::OPERATOR_DIVIDE_VEC_FLOAT, "OP_DIVIDE_VF", EV::VEC, 2, EV::VEC, EV::FLOAT, 2},
     {T::OPERATOR_POWER, "OP_POWER_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 8},
     {T::OPERATOR_POWER_INT, "OP_POWER_I", EV::INT, 2, EV::INT, EV::INT, 8},
+    {T::OPERATOR_MODULO, "OP_MODULO_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 2},
+    {T::OPERATOR_MODULO_INT, "OP_MODULO_I", EV::INT, 2, EV::INT, EV::INT, 2},
     {T::OPERATOR_GET_MEMBER_VEC, "OP_READ_MEMBER_V", EV::FLOAT, 1, EV::VEC, EV::NONE, 7},
     // Functions
     {T::FUNCTION_SQUARE_ROOT, "FN_SQUARE_ROOT", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
     {T::FUNCTION_SINE, "FN_SIN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
     {T::FUNCTION_COSINE, "FN_COS", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_TANGENT, "FN_TAN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_ASIN, "FN_ASIN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_ACOS, "FN_ACOS", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_ATAN, "FN_ATAN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_ATAN2, "FN_ATAN2", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
     {T::FUNCTION_MAX, "FN_MAX_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
     {T::FUNCTION_MAX_INT, "FN_MAX_I", EV::INT, 2, EV::INT, EV::INT, 9},
+    {T::FUNCTION_MIN, "FN_MIN_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
+    {T::FUNCTION_MIN_INT, "FN_MIN_I", EV::INT, 2, EV::INT, EV::INT, 9},
     {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", EV::FLOAT, 1, EV::INT, EV::NONE, 9},
     {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", EV::INT, 1, EV::FLOAT, EV::NONE, 9},
 };
@@ -233,6 +250,35 @@ void token_info_check()
     BLI_assert(token_info[t].type == (Token::TokenType)t);
 }
 #endif
+
+// Lookup table to convert funtion names to token types
+struct func_lookup {
+  const char *name;
+  Token::TokenType type;
+};
+// NOTE name must be all lowercase
+constexpr func_lookup func_table[] = {
+    {"sin", Token::TokenType::FUNCTION_SINE},
+    {"sine", Token::TokenType::FUNCTION_SINE},
+    {"cos", Token::TokenType::FUNCTION_COSINE},
+    {"cosine", Token::TokenType::FUNCTION_COSINE},
+    {"tan", Token::TokenType::FUNCTION_TANGENT},
+    {"tangent", Token::TokenType::FUNCTION_TANGENT},
+    {"asin", Token::TokenType::FUNCTION_ASIN},
+    {"arcsine", Token::TokenType::FUNCTION_ASIN},
+    {"acos", Token::TokenType::FUNCTION_ACOS},
+    {"arccosine", Token::TokenType::FUNCTION_ACOS},
+    {"atan", Token::TokenType::FUNCTION_ATAN},
+    {"arctangent", Token::TokenType::FUNCTION_ATAN},
+    {"atan2", Token::TokenType::FUNCTION_ATAN2},
+    {"max", Token::TokenType::FUNCTION_MAX},
+    {"maximum", Token::TokenType::FUNCTION_MAX},
+    {"min", Token::TokenType::FUNCTION_MIN},
+    {"minimum", Token::TokenType::FUNCTION_MIN},
+    {"sqrt", Token::TokenType::FUNCTION_SQUARE_ROOT},
+    {"squareroot", Token::TokenType::FUNCTION_SQUARE_ROOT},
+    {"square_root", Token::TokenType::FUNCTION_SQUARE_ROOT},
+};
 
 ////////////////////////////////////////////////////////////////////////////
 // TokenQueue
@@ -290,7 +336,7 @@ class TokenQueue {
 
   void print() const
   {
-    printf("%i Tokens:\n", buffer_.size());
+    printf("%i Tokens:\n", (int)buffer_.size());
     for (int i = 0; i < buffer_.size(); i++) {
       Token t = buffer_[i];
       if (t.is_operand())
@@ -344,14 +390,15 @@ class ExpressionParser {
   bool parse_expression(const std::string &input,
                         int &read_pos,
                         TokenQueue &output,
-                        bool terminate_on_close_parens)
+                        bool terminate_on_close_parens,
+                        bool terminate_on_comma = false)
   {
     skip_white_space(input, read_pos);
     if (read_pos == input.length())
       return false;
 
     if (!parse_operand_or_unary(input, read_pos, output)) {
-      set_error_if_none("Expected an operand", read_pos);
+      set_error_if_none(TIP_("Expected an operand"), read_pos);
       return false;
     }
 
@@ -363,16 +410,18 @@ class ExpressionParser {
         return true;
       if (terminate_on_close_parens && input.at(read_pos) == ')')
         return true;
+      if (terminate_on_comma && input.at(read_pos) == ',')
+        return true;
 
       // Expect an operator and another operand
       if (!parse_operator(input, read_pos, output)) {
-        set_error_if_none("Expected an operator", read_pos);
+        set_error_if_none(TIP_("Expected an operator"), read_pos);
         return false;
       }
       // expect another operand after an operator, unless it was postifx
       if (!output.last().is_postfix_operator()) {
         if (!parse_operand_or_unary(input, read_pos, output)) {
-          set_error_if_none("Expected an operand after operator", read_pos);
+          set_error_if_none(TIP_("Expected an operand after operator"), read_pos);
           return false;
         }
       }
@@ -394,7 +443,7 @@ class ExpressionParser {
       output.add_token(Token::TokenType::OPERATOR_UNARY_MINUS, 0);
       read_pos++;
       if (!parse_operand(input, read_pos, output)) {
-        set_error_if_none("Expected operand after unary operator", read_pos);
+        set_error_if_none(TIP_("Expected operand after unary operator"), read_pos);
         return false;
       }
     }
@@ -415,7 +464,7 @@ class ExpressionParser {
       read_pos++;
 
       if (!parse_expression(input, read_pos, output, true)) {
-        set_error_if_none("Expected expression after parenthesis", read_pos);
+        set_error_if_none(TIP_("Expected expression after parenthesis"), read_pos);
         return false;
       }
 
@@ -436,7 +485,7 @@ class ExpressionParser {
       if (read_variable_name_size(input, read_pos) != 0)
         return parse_variable(input, read_pos, output);
 
-      set_error_if_none("Expected a constant, variable or function", read_pos);
+      set_error_if_none(TIP_("Expected a constant, variable or function"), read_pos);
       return false;
     }
   }
@@ -453,24 +502,43 @@ class ExpressionParser {
     // Read the function name
     auto function_op = read_function_op(input, read_pos);
     if (function_op == Token::TokenType::NONE) {
-      set_error_if_none("Unknown function name", start_read_pos);
+      set_error_if_none(TIP_("Unknown function name"), start_read_pos);
       return false;
     }
 
     output.add_token(function_op, 0);
+    int num_args = token_info[(int)function_op].num_args;
 
     // Now expect a left paren
-    if (!parse_left_paren(input, read_pos, output))
-      return false;
-
-    // Now expect an expression
-    start_read_pos = read_pos;
-    if (!parse_expression(input, read_pos, output, true)) {
-      set_error_if_none("Expected an expression as function parameter", start_read_pos);
+    if (!parse_left_paren(input, read_pos, output)) {
+      // set_error_if_none(TIP_("Expected '(' after function name"), start_read_pos);
+      read_pos = start_read_pos;
       return false;
     }
 
-    // TODO expect commas and further expressions for multi-operand functions
+    // Now expect an expression
+    start_read_pos = read_pos;
+    if (!parse_expression(input, read_pos, output, true, num_args > 1)) {
+      read_pos = start_read_pos;
+      return false;
+    }
+
+    // expect commas and further expressions for multi-operand functions
+    int expected_args = num_args - 1;
+    while (expected_args--) {
+      if (!parse_comma(input, read_pos)) {
+        read_pos = start_read_pos;
+        return false;
+      }
+      if (!parse_expression(input, read_pos, output, true, expected_args > 1)) {
+        if (num_args == 2)
+          set_error_if_none(TIP_("Expected 2 arguments to function"), start_read_pos);
+        else
+          set_error_if_none(TIP_("Expected 3 arguments to function"), start_read_pos);
+        read_pos = start_read_pos;
+        return false;
+      }
+    };
 
     // Expect a right param
     if (!parse_right_paren(input, read_pos, output))
@@ -492,7 +560,7 @@ class ExpressionParser {
       return true;
     }
     else {
-      set_error_if_none("Expected (", read_pos);
+      set_error_if_none(TIP_("Expected ("), read_pos);
       return false;
     }
   }
@@ -510,7 +578,24 @@ class ExpressionParser {
       return true;
     }
     else {
-      set_error_if_none("Expected )", read_pos);
+      set_error_if_none(TIP_("Expected )"), read_pos);
+      return false;
+    }
+  }
+  bool parse_comma(const std::string &input, int &read_pos)
+  {
+    bool fail = false;
+    skip_white_space(input, read_pos);
+
+    if (read_pos == input.length())
+      fail = true;
+
+    if (!fail && input.at(read_pos) == ',') {
+      read_pos++;
+      return true;
+    }
+    else {
+      set_error_if_none(TIP_("Expected ','"), read_pos);
       return false;
     }
   }
@@ -533,7 +618,7 @@ class ExpressionParser {
       int field_offset = read_member_offset(input, read_pos);
       if (field_offset == -1) {
         read_pos = start_read_pos;
-        set_error_if_none("Expected member name directly after \".\"", read_pos);
+        set_error_if_none(TIP_("Expected member name directly after \".\""), read_pos);
         return false;
       }
       output.add_token(op, field_offset);
@@ -578,7 +663,25 @@ class ExpressionParser {
       return true;
     }
 
-    set_error_if_none("Invalid number", read_pos);
+    set_error_if_none(TIP_("Invalid number"), read_pos);
+    return false;
+  }
+
+  bool is_special_const(const std::string &var_name, float &val) const
+  {
+    if (var_name.length() == 2 && (var_name[0] == 'p' || var_name[0] == 'P') &&
+        (var_name[1] == 'i' || var_name[1] == 'I'))
+    {
+      val = M_PI;
+      return true;
+    }
+    if (var_name.length() == 3 && (var_name[0] == 't' || var_name[0] == 'T') &&
+        (var_name[1] == 'a' || var_name[1] == 'A') && (var_name[2] == 'u' || var_name[2] == 'U'))
+    {
+      val = M_PI * 2;
+      return true;
+    }
+
     return false;
   }
 
@@ -591,10 +694,18 @@ class ExpressionParser {
 
     int name_len = read_variable_name_size(input, read_pos);
     if (name_len == 0) {
-      set_error_if_none("Expected a variable name", read_pos);
+      set_error_if_none(TIP_("Expected a variable name"), read_pos);
       return false;
     }
     std::string var_name = input.substr(read_pos, name_len);
+
+    // Check if it's a special named constant
+    float special_const_value;
+    if (is_special_const(var_name, special_const_value)) {
+      output.add_token(Token::TokenType::CONSTANT_FLOAT, special_const_value);
+      read_pos += name_len;
+      return true;
+    }
 
     // Check that variable actually exists
     int input_idx = -1;
@@ -606,7 +717,7 @@ class ExpressionParser {
     }
 
     if (input_idx == -1) {
-      set_error_if_none("Unknown input name", read_pos);
+      set_error_if_none(TIP_("Unknown input name"), read_pos);
       return false;
     }
 
@@ -636,27 +747,27 @@ class ExpressionParser {
     if (read_pos == input.length())
       return Token::TokenType::NONE;
 
-    if (input.at(read_pos) == '+') {
-      read_pos++;
-      return Token::TokenType::OPERATOR_PLUS;
-    }
-    if (input.at(read_pos) == '-') {
-      read_pos++;
-      return Token::TokenType::OPERATOR_MINUS;
-    }
-    if (input.at(read_pos) == '*') {
-      read_pos++;
-      return Token::TokenType::OPERATOR_MULTIPLY;
-    }
-    if (input.at(read_pos) == '/') {
-      read_pos++;
-      return Token::TokenType::OPERATOR_DIVIDE;
-    }
-    if (input.at(read_pos) == '.') {
-      read_pos++;
-      return Token::TokenType::OPERATOR_GET_MEMBER_VEC;
+    // Try single character ops
+    char op_char = input.at(read_pos++);
+
+    switch (op_char) {
+      case '+':
+        return Token::TokenType::OPERATOR_PLUS;
+      case '-':
+        return Token::TokenType::OPERATOR_MINUS;
+      case '*':
+        return Token::TokenType::OPERATOR_MULTIPLY;
+      case '/':
+        return Token::TokenType::OPERATOR_DIVIDE;
+      case '^':
+        return Token::TokenType::OPERATOR_POWER;
+      case '%':
+        return Token::TokenType::OPERATOR_MODULO;
+      case '.':
+        return Token::TokenType::OPERATOR_GET_MEMBER_VEC;
     }
 
+    read_pos--;
     return Token::TokenType::NONE;
   }
 
@@ -688,17 +799,22 @@ class ExpressionParser {
   Token::TokenType read_function_op(const std::string &input, int &read_pos)
   {
     skip_white_space(input, read_pos);
-    if (input.find("Sin", read_pos) == read_pos || input.find("sin", read_pos) == read_pos) {
-      read_pos += 3;
-      return Token::TokenType::FUNCTION_SINE;
+    int paren_pos = input.find('(', read_pos);
+    if (paren_pos == -1)
+      return Token::TokenType::NONE;
+
+    // Get string up to opening paren and convert to lowercase
+    std::string func_name = input.substr(read_pos, paren_pos - read_pos);
+    for (auto &c : func_name) {
+      c = tolower(c);
     }
-    if (input.find("Cos", read_pos) == read_pos || input.find("cos", read_pos) == read_pos) {
-      read_pos += 3;
-      return Token::TokenType::FUNCTION_COSINE;
-    }
-    if (input.find("Sqrt", read_pos) == read_pos || input.find("sqrt", read_pos) == read_pos) {
-      read_pos += 4;
-      return Token::TokenType::FUNCTION_SQUARE_ROOT;
+
+    static int num_func_names = sizeof(func_table) / sizeof(func_lookup);
+    for (int i = 0; i < num_func_names; i++) {
+      if (func_table[i].name == func_name) {
+        read_pos = paren_pos;
+        return func_table[i].type;
+      }
     }
 
     return Token::TokenType::NONE;
@@ -779,7 +895,7 @@ class ExpressionProgram {
     if (!ok) {
       // Combine the error message with part of the expression from the error location to give
       // final message
-      error_msg = std::move(std::string(TIP_(parser_error)));
+      error_msg = std::move(std::string(parser_error));
       int chars_after_error = expression.size() - error_pos;
       if (chars_after_error == 0 && error_pos > 0) {
         error_pos--;
@@ -878,6 +994,10 @@ class ExpressionProgram {
       case TokenType::FUNCTION_MAX:
         if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
           return TokenType::FUNCTION_MAX_INT;
+        break;
+      case TokenType::FUNCTION_MIN:
+        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
+          return TokenType::FUNCTION_MIN_INT;
         break;
     }
 
@@ -1116,7 +1236,7 @@ class ExpressionProgram {
             if (top.precedence() < precedence || top.type == Token::TokenType::LEFT_PAREN)
               break;
             if (!output_op_or_function(top, output, stack_type, stack_size)) {
-              error_msg = unsupported_type_error(top);
+              error_msg = unsupported_type_error(top, stack_type);
               return false;
             }
             operator_stack.discard_last();
@@ -1132,7 +1252,7 @@ class ExpressionProgram {
         while (operator_stack.last().type != Token::TokenType::LEFT_PAREN) {
           Token top = operator_stack.last();
           if (!output_op_or_function(top, output, stack_type, stack_size)) {
-            error_msg = unsupported_type_error(top);
+            error_msg = unsupported_type_error(top, stack_type);
             return false;
           }
           operator_stack.discard_last();
@@ -1150,7 +1270,7 @@ class ExpressionProgram {
     while (!operator_stack.is_empty()) {
       Token top = operator_stack.last();
       if (!output_op_or_function(top, output, stack_type, stack_size)) {
-        error_msg = unsupported_type_error(top);
+        error_msg = unsupported_type_error(top, stack_type);
         return false;
       }
       operator_stack.discard_last();
@@ -1184,10 +1304,125 @@ class ExpressionProgram {
     return true;
   }
 
-  std::string unsupported_type_error(Token t)
+  std::string unsupported_type_error(Token t, const Vector<Token::eValueType> &stack_type)
   {
-    return std::string(token_info[(int)t.type].name) + std::string(TIP_(": wrong data type."));
+    auto token_name = std::string(token_info[(int)t.type].name) + std::string(": ");
+    if (t.num_args() == 1) {
+      if (stack_type.last() == eValueType::VEC)
+        return token_name + TIP_(": Cannot perform this function on a vector");
+    }
+    else if (t.num_args() == 2) {
+      auto arg1_type = stack_type.last();
+      auto arg2_type = stack_type.last(1);
+      if ((arg1_type == eValueType::VEC && arg2_type != eValueType::VEC) ||
+          (arg1_type != eValueType::VEC && arg2_type == eValueType::VEC))
+        return token_name + TIP_("Cannot mix vector and non vector types in this operation");
+
+      if (arg1_type == eValueType::VEC && arg2_type == eValueType::VEC)
+        return token_name + TIP_("Cannot perform this operation on a vector");
+    }
+
+    // Catch all error message
+    return token_name + TIP_(": wrong data type.");
   }
+
+  struct RuntimeStack {
+    float stack[MAX_STACK];
+    int top_idx = -1;  // index of top item on stack
+
+    inline void push_float(float val)
+    {
+      stack[++top_idx] = val;
+    }
+
+    inline void push_int(int val)
+    {
+      *(reinterpret_cast<int *>(&(stack[++top_idx]))) = val;
+    }
+
+    inline void push_vector(float3 &val)
+    {
+      stack[++top_idx] = val.x;
+      stack[++top_idx] = val.y;
+      stack[++top_idx] = val.z;
+    }
+
+    inline float pop_float()
+    {
+      return stack[top_idx--];
+    }
+
+    inline int pop_int()
+    {
+      return *reinterpret_cast<int *>(&stack[top_idx--]);
+    }
+
+    inline float3 pop_vector()
+    {
+      top_idx -= 3;
+      return float3(stack[top_idx + 1], stack[top_idx + 2], stack[top_idx + 3]);
+    }
+
+    // Some utility methods to pop multiple args in one call, as this common
+    struct PopTwoFloatsResults {
+      float arg1;  // The argument pushed onto the stack first
+      float arg2;
+    };
+    struct PopTwoIntsResults {
+      int arg1;  // The argument pushed onto the stack first
+      int arg2;
+    };
+    struct PopTwoVectorsResults {
+      float3 arg1;  // The argument pushed onto the stack first
+      float3 arg2;
+    };
+
+    inline PopTwoFloatsResults pop_two_floats()
+    {
+      top_idx -= 2;
+      return PopTwoFloatsResults{stack[top_idx + 1], stack[top_idx + 2]};
+    }
+
+    inline PopTwoIntsResults pop_two_ints()
+    {
+      top_idx -= 2;
+      int *int_stack = reinterpret_cast<int *>(stack);
+      return PopTwoIntsResults{int_stack[top_idx + 1], int_stack[top_idx + 2]};
+    }
+
+    inline PopTwoVectorsResults pop_two_vectors()
+    {
+      top_idx -= 6;
+      return PopTwoVectorsResults{
+          float3(stack[top_idx + 1], stack[top_idx + 2], stack[top_idx + 3]),
+          float3(stack[top_idx + 4], stack[top_idx + 5], stack[top_idx + 6])};
+    }
+
+    inline int peek_int(int offset = 0)
+    {
+      return *reinterpret_cast<int *>(&stack[top_idx - offset]);
+    }
+
+    inline float peek_float(int offset = 0)
+    {
+      return stack[top_idx - offset];
+    }
+
+    inline void replace_float(float val, int offset = 0)
+    {
+      stack[top_idx + offset] = val;
+    }
+
+    inline void replace_int(int val, int offset = 0)
+    {
+      *reinterpret_cast<int *>(&stack[top_idx - offset]) = val;
+    }
+
+    inline void discard(int amount)
+    {
+      top_idx -= amount;
+    }
+  };
 
   using output_variant = std::variant<float, int, bool, float3>;
 
@@ -1197,165 +1432,203 @@ class ExpressionProgram {
       return 0;
 
     const TokenQueue &program = program_buffer_;
-    float stack[MAX_STACK];
-    int top_idx = -1;  // index of top item on stack
+    struct RuntimeStack stack;
 
     int num_ops = program.element_count();
     for (int i = 0; i < num_ops; i++) {
       Token t = program.at(i);
       switch (t.type) {
         case Token::TokenType::CONSTANT_FLOAT:
-          push_float(stack, top_idx, t.get_value_as_float());
+          stack.push_float(t.get_value_as_float());
           break;
         case Token::TokenType::CONSTANT_INT:
-          push_int(stack, top_idx, t.value);
+          stack.push_int(t.value);
           break;
         case Token::TokenType::VARIABLE_FLOAT: {
           float v = inputs[t.value].get<float>(index);
-          push_float(stack, top_idx, v);
+          stack.push_float(v);
         } break;
         case Token::TokenType::VARIABLE_INT: {
-          float v = inputs[t.value].get<int>(index);
-          push_int(stack, top_idx, v);
+          int v = inputs[t.value].get<int>(index);
+          stack.push_int(v);
         } break;
         case Token::TokenType::VARIABLE_BOOL: {
           bool b = inputs[t.value].get<bool>(index);
           int int_val = b ? 1 : 0;
-          push_int(stack, top_idx, int_val);
+          stack.push_int(int_val);
         } break;
         case Token::TokenType::VARIABLE_VEC: {
           float3 vv = inputs[t.value].get<float3>(index);
-          push_vector(stack, top_idx, vv);
+          stack.push_vector(vv);
         } break;
         case Token::TokenType::OPERATOR_PLUS: {
-          auto [arg1, arg2] = pop_two_floats(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_floats();
           float res = arg1 + arg2;
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_PLUS_INT: {
-          auto [arg1, arg2] = pop_two_ints(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_ints();
           int res = arg1 + arg2;
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_PLUS_VEC: {
-          auto [arg1, arg2] = pop_two_vectors(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_vectors();
           float3 res = arg1 + arg2;
-          push_vector(stack, top_idx, res);
+          stack.push_vector(res);
         } break;
         case Token::TokenType::OPERATOR_MINUS: {
-          auto [arg1, arg2] = pop_two_floats(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_floats();
           float res = arg1 - arg2;
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_MINUS_INT: {
-          auto [arg1, arg2] = pop_two_ints(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_ints();
           int res = arg1 - arg2;
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_MINUS_VEC: {
-          auto [arg1, arg2] = pop_two_vectors(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_vectors();
           float3 res = arg1 - arg2;
-          push_vector(stack, top_idx, res);
+          stack.push_vector(res);
         } break;
         case Token::TokenType::OPERATOR_MULTIPLY: {
-          auto [arg1, arg2] = pop_two_floats(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_floats();
           float res = arg1 * arg2;
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_MULTIPLY_INT: {
-          auto [arg1, arg2] = pop_two_ints(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_ints();
           int res = arg1 * arg2;
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_MULTIPLY_FLOAT_VEC: {
-          float3 arg2 = pop_vector(stack, top_idx);
-          float arg1 = pop_float(stack, top_idx);
+          float3 arg2 = stack.pop_vector();
+          float arg1 = stack.pop_float();
           float3 res = arg1 * arg2;
-          push_vector(stack, top_idx, res);
+          stack.push_vector(res);
         } break;
         case Token::TokenType::OPERATOR_MULTIPLY_VEC_FLOAT: {
-          float arg2 = pop_float(stack, top_idx);
-          float3 arg1 = pop_vector(stack, top_idx);
+          float arg2 = stack.pop_float();
+          float3 arg1 = stack.pop_vector();
           float3 res = arg1 * arg2;
-          push_vector(stack, top_idx, res);
+          stack.push_vector(res);
         } break;
         case Token::TokenType::OPERATOR_DIVIDE: {
-          auto [arg1, arg2] = pop_two_floats(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_floats();
           float res = arg1 / arg2;
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_DIVIDE_INT: {
-          auto [arg1, arg2] = pop_two_ints(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_ints();
           int res = arg1 / arg2;
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_DIVIDE_VEC_FLOAT: {
-          float arg2 = pop_float(stack, top_idx);
-          float3 arg1 = pop_vector(stack, top_idx);
+          float arg2 = stack.pop_float();
+          float3 arg1 = stack.pop_vector();
           float3 res = arg1 / arg2;
-          push_vector(stack, top_idx, res);
+          stack.push_vector(res);
         } break;
         case Token::TokenType::OPERATOR_POWER: {
-          auto [arg1, arg2] = pop_two_floats(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_floats();
           float res = pow(arg1, arg2);
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_POWER_INT: {
-          auto [arg1, arg2] = pop_two_ints(stack, top_idx);
+          auto [arg1, arg2] = stack.pop_two_ints();
           int res = pow(arg1, arg2);
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_MODULO: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          float res = fmodf(arg1, arg2);
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::OPERATOR_MODULO_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          int res = arg1 % arg2;
+          stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_UNARY_MINUS: {
-          stack[top_idx] = -stack[top_idx];
+          stack.push_float(-stack.pop_float());
         } break;
         case Token::TokenType::OPERATOR_UNARY_MINUS_INT: {
-          int *int_stack = reinterpret_cast<int *>(stack);
-          int_stack[top_idx] = -int_stack[top_idx];
+          stack.push_int(-stack.pop_int());
         } break;
         case Token::TokenType::OPERATOR_UNARY_MINUS_VEC: {
-          stack[top_idx] = -stack[top_idx];
-          stack[top_idx - 1] = -stack[top_idx - 1];
-          stack[top_idx - 2] = -stack[top_idx - 2];
+          auto vv = stack.pop_vector();
+          vv = -vv;
+          stack.push_vector(vv);
         } break;
         case Token::TokenType::OPERATOR_GET_MEMBER_VEC: {
-          int offset = t.value;
-          float f = stack[top_idx - offset];
-          top_idx -= 3;  // discard the vector
-          push_float(stack, top_idx, f);
+          float f = stack.peek_float(t.value);
+          stack.discard(3);  // discard the vector
+          stack.push_float(f);
         } break;
         case Token::TokenType::FUNCTION_COSINE: {
-          float res = cos(pop_float(stack, top_idx));
-          push_float(stack, top_idx, res);
+          float res = cos(stack.pop_float());
+          stack.push_float(res);
         } break;
         case Token::TokenType::FUNCTION_SINE: {
-          float res = sin(pop_float(stack, top_idx));
-          push_float(stack, top_idx, res);
+          float res = sin(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_TANGENT: {
+          float res = tan(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_ASIN: {
+          float res = asin(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_ACOS: {
+          float res = acos(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_ATAN: {
+          float res = atan(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_ATAN2: {
+          auto [a, b] = stack.pop_two_floats();
+          float res = atan2(a, b);
+          stack.push_float(res);
         } break;
         case Token::TokenType::FUNCTION_SQUARE_ROOT: {
-          float res = sqrt(pop_float(stack, top_idx));
-          push_float(stack, top_idx, res);
+          float res = sqrt(stack.pop_float());
+          stack.push_float(res);
         } break;
         case Token::TokenType::FUNCTION_MAX: {
-          auto [a, b] = pop_two_floats(stack, top_idx);
+          auto [a, b] = stack.pop_two_floats();
           float res = a > b ? a : b;
-          push_float(stack, top_idx, res);
+          stack.push_float(res);
         } break;
         case Token::TokenType::FUNCTION_MAX_INT: {
-          auto [a, b] = pop_two_ints(stack, top_idx);
+          auto [a, b] = stack.pop_two_ints();
           int res = a > b ? a : b;
-          push_int(stack, top_idx, res);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::FUNCTION_MIN: {
+          auto [a, b] = stack.pop_two_floats();
+          float res = a < b ? a : b;
+          stack.push_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_MIN_INT: {
+          auto [a, b] = stack.pop_two_ints();
+          int res = a < b ? a : b;
+          stack.push_int(res);
         } break;
         case Token::TokenType::CONVERT_INT_FLOAT: {
           int offset = t.value;  // may not be top of stack to convert
-          int i = *(reinterpret_cast<int *>(&stack[top_idx - offset]));
+          int i = stack.peek_int(offset);
           float res = (float)i;
-          stack[top_idx - offset] = res;
+          stack.replace_float(res, offset);
         } break;
         case Token::TokenType::CONVERT_FLOAT_INT: {
           int offset = t.value;  // may not be top of stack to convert
-          float f = stack[top_idx - offset];
+          float f = stack.peek_float(offset);
           int res = (int)f;
-          *(reinterpret_cast<int *>(&stack[top_idx - offset])) = res;
+          stack.replace_int(res, offset);
         } break;
         case Token::TokenType::LEFT_PAREN:
         case Token::TokenType::RIGHT_PAREN:
@@ -1370,52 +1643,16 @@ class ExpressionProgram {
 
     // Get correct type off of stack and return it
     if (output_type_ == eNodeSocketDatatype::SOCK_FLOAT)
-      return output_variant(pop_float(stack, top_idx));
+      return output_variant(stack.pop_float());
     else if (output_type_ == eNodeSocketDatatype::SOCK_INT)
-      return output_variant(pop_int(stack, top_idx));
+      return output_variant(stack.pop_int());
     else if (output_type_ == eNodeSocketDatatype::SOCK_BOOLEAN) {
-      int tos = pop_int(stack, top_idx);
+      int tos = stack.pop_int();
       return output_variant(tos != 0);
     }
     else
-      return output_variant(pop_vector(stack, top_idx));
+      return output_variant(stack.pop_vector());
   }
-
-  // Utility methods to push a particular type onto the argument stack
-  inline void push_float(float stack[], int &top_idx, float val) const
-  {
-    stack[++top_idx] = val;
-  }
-
-  inline void push_int(float stack[], int &top_idx, int val) const
-  {
-    *(reinterpret_cast<int *>(&(stack[++top_idx]))) = val;
-  }
-
-  inline void push_vector(float stack[], int &top_idx, float3 &val) const
-  {
-    stack[++top_idx] = val.x;
-    stack[++top_idx] = val.y;
-    stack[++top_idx] = val.z;
-  }
-
-  // Utility methods to pop a particular type from the argument stack
-  inline float pop_float(float stack[], int &top_idx) const
-  {
-    return stack[top_idx--];
-  }
-
-  inline int pop_int(float stack[], int &top_idx) const
-  {
-    return *reinterpret_cast<int *>(&stack[top_idx--]);
-  }
-
-  inline float3 pop_vector(float stack[], int &top_idx) const
-  {
-    top_idx -= 3;
-    return float3(stack[top_idx + 1], stack[top_idx + 2], stack[top_idx + 3]);
-  }
-
   // Some utility methods to pop multiple args in one call, as this common
   struct PopTwoFloatsResults {
     float arg1;  // The argument pushed onto the stack first
@@ -1682,6 +1919,10 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
   // If the link wasn't added or it's an output, we're done
   if (!ok || link->fromnode == node)
     return ok;
+
+  // If it's the expression socket, allow connection from string socket only
+  if (STREQ(link->tosock->identifier, "Expression"))
+    return link->fromsock->type == eNodeSocketDatatype::SOCK_STRING;
 
   // If we didn't add a new socket, then an existing one got reused. Check the type is valid as
   // try_add_item_via_any_extend_socket doesn't check this
