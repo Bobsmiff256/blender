@@ -50,6 +50,7 @@ struct Token {
     FIRST_SPECIAL,
     LEFT_PAREN = FIRST_SPECIAL,
     RIGHT_PAREN,
+    COMMA,
     // Operators
     FIRST_OPERATOR,
     OPERATOR_UNARY_MINUS = FIRST_OPERATOR,
@@ -88,6 +89,13 @@ struct Token {
     FUNCTION_MAX_INT,
     FUNCTION_MIN,
     FUNCTION_MIN_INT,
+    FUNCTION_ABS,
+    FUNCTION_ABS_INT,
+    FUNCTION_SIGN,
+    FUNCTION_SIGN_INT,
+    FUNCTION_TO_RADIANS,
+    FUNCTION_TO_DEGREES,
+    FUNCTION_VECTOR,
     CONVERT_INT_FLOAT,
     CONVERT_FLOAT_INT,
     NUM
@@ -157,69 +165,81 @@ struct Token {
 struct TokenInfo {
   Token::TokenType type;
   const char *name;
+  int precedence;
   Token::eValueType result_type;
   int num_args;
   Token::eValueType arg1_type;
   Token::eValueType arg2_type;
-  int precedence;
+  Token::eValueType arg3_type;
 };
 
 // Need some abbreviations to stop lines getting too long
 // and the auto formatter messing things up
 using EV = Token::eValueType;
 using T = Token::TokenType;
+#define NA EV::NONE
 
 static const TokenInfo const token_info[(int)T::NUM] = {
-    {T::NONE, "NONE", EV::NONE, 0, EV::NONE, EV::NONE},
+    {T::NONE, "NONE", 0, NA, 0, NA, NA},
     // Constants
-    {T::CONSTANT_FLOAT, "CONST_FLOAT", EV::FLOAT, 0, EV::NONE, EV::NONE, 0},
-    {T::CONSTANT_INT, "CONSTANT_INT", EV::INT, 0, EV::NONE, EV::NONE, 0},
+    {T::CONSTANT_FLOAT, "CONST_FLOAT", 0, EV::FLOAT, 0, NA, NA},
+    {T::CONSTANT_INT, "CONSTANT_INT", 0, EV::INT, 0, NA, NA},
     // Variables (Inputs)
-    {T::VARIABLE_FLOAT, "VARIABLE_FLOAT", EV::FLOAT, 0, EV::NONE, EV::NONE, 0},
-    {T::VARIABLE_INT, "VARIABLE_INT", EV::INT, 0, EV::NONE, EV::NONE, 0},
-    {T::VARIABLE_BOOL, "VARIABLE_BOOL", EV::INT, 0, EV::NONE, EV::NONE, 0},
-    {T::VARIABLE_VEC, "VARIABLE_VECTOR", EV::VEC, 0, EV::NONE, EV::NONE, 0},
+    {T::VARIABLE_FLOAT, "VARIABLE_FLOAT", 0, EV::FLOAT, 0, NA, NA},
+    {T::VARIABLE_INT, "VARIABLE_INT", 0, EV::INT, 0, NA, NA},
+    {T::VARIABLE_BOOL, "VARIABLE_BOOL", 0, EV::INT, 0, NA, NA},
+    {T::VARIABLE_VEC, "VARIABLE_VECTOR", 0, EV::VEC, 0, NA, NA},
     // Specials
-    {T::LEFT_PAREN, "LEFT_PAREN", EV::NONE, 0, EV::NONE, EV::NONE, 0},
-    {T::RIGHT_PAREN, "RIGHT_PAREN", EV::NONE, 0, EV::NONE, EV::NONE, 0},
+    {T::LEFT_PAREN, "LEFT_PAREN", 0, NA, 0, NA, NA},
+    {T::RIGHT_PAREN, "RIGHT_PAREN", 0, NA, 0, NA, NA},
+    {T::COMMA, "COMMA", 0, NA, 0, NA, NA},
     // Operators
-    {T::OPERATOR_UNARY_MINUS, "OP_UNARY_MINUS_F", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 7},
-    {T::OPERATOR_UNARY_MINUS_INT, "OP_UNARY_MINUS_I", EV::INT, 1, EV::INT, EV::NONE, 7},
-    {T::OPERATOR_UNARY_MINUS_VEC, "OP_UNARY_MINUS_V", EV::VEC, 1, EV::VEC, EV::NONE, 7},
-    {T::OPERATOR_PLUS, "OP_PLUS_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 1},
-    {T::OPERATOR_PLUS_INT, "OP_PLUS_I", EV::INT, 2, EV::INT, EV::INT, 1},
-    {T::OPERATOR_PLUS_VEC, "OP_PLUS_V", EV::VEC, 2, EV::VEC, EV::VEC, 1},
-    {T::OPERATOR_MINUS, "OP_MINUS_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 1},
-    {T::OPERATOR_MINUS_INT, "OP_MINUS_I", EV::INT, 2, EV::INT, EV::INT, 1},
-    {T::OPERATOR_MINUS_VEC, "OP_MINUS_V", EV::VEC, 2, EV::VEC, EV::VEC, 1},
-    {T::OPERATOR_MULTIPLY, "OP_MULTIPLY_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 2},
-    {T::OPERATOR_MULTIPLY_INT, "OP_MULTIPLY_I", EV::INT, 2, EV::INT, EV::INT, 2},
-    {T::OPERATOR_MULTIPLY_FLOAT_VEC, "OP_MULTIPLY_FV", EV::VEC, 2, EV::FLOAT, EV::VEC, 2},
-    {T::OPERATOR_MULTIPLY_VEC_FLOAT, "OP_MULTIPLY_VF", EV::VEC, 2, EV::VEC, EV::FLOAT, 2},
-    {T::OPERATOR_DIVIDE, "OP_DIVIDE_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 2},
-    {T::OPERATOR_DIVIDE_INT, "OP_DIVIDE_I", EV::INT, 2, EV::INT, EV::INT, 2},
-    {T::OPERATOR_DIVIDE_VEC_FLOAT, "OP_DIVIDE_VF", EV::VEC, 2, EV::VEC, EV::FLOAT, 2},
-    {T::OPERATOR_POWER, "OP_POWER_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 8},
-    {T::OPERATOR_POWER_INT, "OP_POWER_I", EV::INT, 2, EV::INT, EV::INT, 8},
-    {T::OPERATOR_MODULO, "OP_MODULO_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 2},
-    {T::OPERATOR_MODULO_INT, "OP_MODULO_I", EV::INT, 2, EV::INT, EV::INT, 2},
-    {T::OPERATOR_GET_MEMBER_VEC, "OP_READ_MEMBER_V", EV::FLOAT, 1, EV::VEC, EV::NONE, 7},
+    {T::OPERATOR_UNARY_MINUS, "OP_UNARY_MINUS_F", 7, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::OPERATOR_UNARY_MINUS_INT, "OP_UNARY_MINUS_I", 7, EV::INT, 1, EV::INT, NA},
+    {T::OPERATOR_UNARY_MINUS_VEC, "OP_UNARY_MINUS_V", 7, EV::VEC, 1, EV::VEC, NA},
+    {T::OPERATOR_PLUS, "OP_PLUS_F", 1, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_PLUS_INT, "OP_PLUS_I", 1, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_PLUS_VEC, "OP_PLUS_V", 1, EV::VEC, 2, EV::VEC, EV::VEC},
+    {T::OPERATOR_MINUS, "OP_MINUS_F", 1, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_MINUS_INT, "OP_MINUS_I", 1, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_MINUS_VEC, "OP_MINUS_V", 1, EV::VEC, 2, EV::VEC, EV::VEC},
+    {T::OPERATOR_MULTIPLY, "OP_MULTIPLY_F", 2, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_MULTIPLY_INT, "OP_MULTIPLY_I", 2, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_MULTIPLY_FLOAT_VEC, "OP_MULTIPLY_FV", 2, EV::VEC, 2, EV::FLOAT, EV::VEC},
+    {T::OPERATOR_MULTIPLY_VEC_FLOAT, "OP_MULTIPLY_VF", 2, EV::VEC, 2, EV::VEC, EV::FLOAT},
+    {T::OPERATOR_DIVIDE, "OP_DIVIDE_F", 2, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_DIVIDE_INT, "OP_DIVIDE_I", 2, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_DIVIDE_VEC_FLOAT, "OP_DIVIDE_VF", 2, EV::VEC, 2, EV::VEC, EV::FLOAT},
+    {T::OPERATOR_POWER, "OP_POWER_F", 8, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_POWER_INT, "OP_POWER_I", 8, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_MODULO, "OP_MODULO_F", 2, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_MODULO_INT, "OP_MODULO_I", 2, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_GET_MEMBER_VEC, "OP_READ_MEMBER_V", 9, EV::FLOAT, 1, EV::VEC, NA},
     // Functions
-    {T::FUNCTION_SQUARE_ROOT, "FN_SQUARE_ROOT", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_SINE, "FN_SIN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_COSINE, "FN_COS", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_TANGENT, "FN_TAN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_ASIN, "FN_ASIN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_ACOS, "FN_ACOS", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_ATAN, "FN_ATAN", EV::FLOAT, 1, EV::FLOAT, EV::NONE, 9},
-    {T::FUNCTION_ATAN2, "FN_ATAN2", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
-    {T::FUNCTION_MAX, "FN_MAX_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
-    {T::FUNCTION_MAX_INT, "FN_MAX_I", EV::INT, 2, EV::INT, EV::INT, 9},
-    {T::FUNCTION_MIN, "FN_MIN_F", EV::FLOAT, 2, EV::FLOAT, EV::FLOAT, 9},
-    {T::FUNCTION_MIN_INT, "FN_MIN_I", EV::INT, 2, EV::INT, EV::INT, 9},
-    {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", EV::FLOAT, 1, EV::INT, EV::NONE, 9},
-    {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", EV::INT, 1, EV::FLOAT, EV::NONE, 9},
+    {T::FUNCTION_SQUARE_ROOT, "FN_SQUARE_ROOT", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_SINE, "FN_SIN", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_COSINE, "FN_COS", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_TANGENT, "FN_TAN", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_ASIN, "FN_ASIN", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_ACOS, "FN_ACOS", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_ATAN, "FN_ATAN", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_ATAN2, "FN_ATAN2", 9, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_MAX, "FN_MAX_F", 9, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_MAX_INT, "FN_MAX_I", 9, EV::INT, 2, EV::INT, EV::INT},
+    {T::FUNCTION_MIN, "FN_MIN_F", 9, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_MIN_INT, "FN_MIN_I", 9, EV::INT, 2, EV::INT, EV::INT},
+    {T::FUNCTION_ABS, "FN_ABS", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_ABS_INT, "FN_ABS_INT", 9, EV::INT, 1, EV::INT, NA},
+    {T::FUNCTION_SIGN, "FN_SIGN", 9, EV::INT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_SIGN_INT, "FN_SIGN_INT", 9, EV::INT, 1, EV::INT, NA},
+    {T::FUNCTION_TO_RADIANS, "FN_TO_RADIANS", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_TO_DEGREES, "FN_TO_DEGREES", 9, EV::FLOAT, 1, EV::FLOAT, NA},
+    {T::FUNCTION_VECTOR, "FN_VECTOR", 9, EV::VEC, 3, EV::FLOAT, EV::FLOAT, EV::FLOAT},
+    {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", 9, EV::FLOAT, 1, EV::INT, NA},
+    {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", 9, EV::INT, 1, EV::FLOAT, NA},
 };
+
+#undef NA
 
 inline int Token::precedence() const
 {
@@ -278,6 +298,15 @@ constexpr func_lookup func_table[] = {
     {"sqrt", Token::TokenType::FUNCTION_SQUARE_ROOT},
     {"squareroot", Token::TokenType::FUNCTION_SQUARE_ROOT},
     {"square_root", Token::TokenType::FUNCTION_SQUARE_ROOT},
+    {"abs", Token::TokenType::FUNCTION_ABS},
+    {"absolute", Token::TokenType::FUNCTION_ABS},
+    {"sign", Token::TokenType::FUNCTION_SIGN},
+    {"toradians", Token::TokenType::FUNCTION_TO_RADIANS},
+    {"to_radians", Token::TokenType::FUNCTION_TO_RADIANS},
+    {"todegrees", Token::TokenType::FUNCTION_TO_DEGREES},
+    {"to_degrees", Token::TokenType::FUNCTION_TO_DEGREES},
+    {"vec", Token::TokenType::FUNCTION_VECTOR},
+    {"vector", Token::TokenType::FUNCTION_VECTOR},
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -526,11 +555,11 @@ class ExpressionParser {
     // expect commas and further expressions for multi-operand functions
     int expected_args = num_args - 1;
     while (expected_args--) {
-      if (!parse_comma(input, read_pos)) {
+      if (!parse_comma(input, read_pos, output)) {
         read_pos = start_read_pos;
         return false;
       }
-      if (!parse_expression(input, read_pos, output, true, expected_args > 1)) {
+      if (!parse_expression(input, read_pos, output, true, expected_args > 0)) {
         if (num_args == 2)
           set_error_if_none(TIP_("Expected 2 arguments to function"), start_read_pos);
         else
@@ -582,7 +611,7 @@ class ExpressionParser {
       return false;
     }
   }
-  bool parse_comma(const std::string &input, int &read_pos)
+  bool parse_comma(const std::string &input, int &read_pos, TokenQueue &output)
   {
     bool fail = false;
     skip_white_space(input, read_pos);
@@ -591,6 +620,7 @@ class ExpressionParser {
       fail = true;
 
     if (!fail && input.at(read_pos) == ',') {
+      output.add_token(Token::TokenType::COMMA, 0);
       read_pos++;
       return true;
     }
@@ -947,6 +977,12 @@ class ExpressionProgram {
       case TokenType::OPERATOR_POWER:
         if (arg_type == eValueType::INT)
           return TokenType::OPERATOR_POWER_INT;
+      case TokenType::FUNCTION_ABS:
+        if (arg_type == eValueType::INT)
+          return TokenType::FUNCTION_ABS_INT;
+      case TokenType::FUNCTION_SIGN:
+        if (arg_type == eValueType::INT)
+          return TokenType::FUNCTION_SIGN_INT;
         break;
     }
 
@@ -991,6 +1027,14 @@ class ExpressionProgram {
         if (arg_type1 == eValueType::VEC && arg_type2 == eValueType::FLOAT)
           return TokenType::OPERATOR_DIVIDE_VEC_FLOAT;
         break;
+      case TokenType::OPERATOR_POWER:
+        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
+          return TokenType::OPERATOR_POWER_INT;
+        break;
+      case TokenType::OPERATOR_MODULO:
+        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
+          return TokenType::OPERATOR_MODULO_INT;
+        break;
       case TokenType::FUNCTION_MAX:
         if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
           return TokenType::FUNCTION_MAX_INT;
@@ -999,6 +1043,26 @@ class ExpressionProgram {
         if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
           return TokenType::FUNCTION_MIN_INT;
         break;
+    }
+
+    // No conversion found
+    return TokenType::NONE;
+  }
+
+  // Find the correct operator or function token for a particular argument type
+  static TokenType get_op_version_for_type(TokenType base_type,
+                                           eValueType arg1_type,
+                                           eValueType arg2_type,
+                                           eValueType arg3_type)
+  {
+    // Most operators and functions default to float args
+    // If there are exceptions they should be checked before here
+    if (arg1_type == eValueType::FLOAT && arg2_type == eValueType::FLOAT &&
+        arg3_type == eValueType::FLOAT)
+      return base_type;
+
+    switch (base_type) {
+      // TODO
     }
 
     // No conversion found
@@ -1149,6 +1213,45 @@ class ExpressionProgram {
     return TokenType::NONE;
   }
 
+  bool is_scalar(eValueType type)
+  {
+    return type == eValueType::FLOAT || type == eValueType::INT;
+  }
+
+  TokenType perform_type_conversion(TokenQueue &output,
+                                    TokenType type,
+                                    eValueType &arg1_type,
+                                    eValueType &arg2_type,
+                                    eValueType &arg3_type)
+  {
+    TokenType specialized_op = get_op_version_for_type(type, arg1_type, arg2_type, arg3_type);
+    if (specialized_op != TokenType::NONE)
+      return specialized_op;
+
+    // See if we can convert int to float
+    TokenType all_float_op = get_op_version_for_type(
+        type, eValueType::FLOAT, eValueType::FLOAT, eValueType::FLOAT);
+    if (all_float_op != TokenType::NONE && is_scalar(arg1_type) && is_scalar(arg2_type) &&
+        is_scalar(arg3_type))
+    {
+      if (arg1_type == eValueType::INT) {
+        output.add_token(TokenType::CONVERT_INT_FLOAT, 2);  // Insert conversion op
+        arg1_type = eValueType::FLOAT;                      // arg type has changed
+      }
+      if (arg2_type == eValueType::INT) {
+        output.add_token(TokenType::CONVERT_INT_FLOAT, 1);
+        arg2_type = eValueType::FLOAT;
+      }
+      if (arg3_type == eValueType::INT) {
+        output.add_token(TokenType::CONVERT_INT_FLOAT, 0);
+        arg3_type = eValueType::FLOAT;
+      }
+      return all_float_op;
+    }
+
+    return TokenType::NONE;
+  }
+
   bool output_op_or_function(const Token &t,
                              TokenQueue &output,
                              Vector<Token::eValueType> &stack_type,
@@ -1174,8 +1277,34 @@ class ExpressionProgram {
 
       return true;
     }
+    if (t.num_args() == 3) {
+      eValueType arg1_type = stack_type.last(2);
+      eValueType arg2_type = stack_type.last(1);
+      eValueType arg3_type = stack_type.last(0);
 
-    // Assume we have a two argument operator (ternary ops not supported)
+      Token::TokenType specialized_op = perform_type_conversion(
+          output, t.type, arg1_type, arg2_type, arg3_type);
+
+      if (specialized_op == TokenType::NONE) {
+        return false;
+      }
+
+      output.add_token(specialized_op, t.value);
+
+      eValueType result_type = Token::result_type(specialized_op);
+      stack_size -= stack_space(arg1_type);
+      stack_size -= stack_space(arg2_type);
+      stack_size -= stack_space(arg3_type);
+      stack_size += stack_space(result_type);
+      stack_type.pop_last();
+      stack_type.pop_last();
+      stack_type.pop_last();
+      stack_type.append(result_type);
+
+      return true;
+    }
+
+    // Assume we have a two argument operator
     // Get the arg types and a specialized op for the two types
     eValueType first_type = stack_type.last(1);
     eValueType second_type = stack_type.last(0);
@@ -1247,7 +1376,7 @@ class ExpressionProgram {
       else if (t.type == Token::TokenType::LEFT_PAREN) {
         operator_stack.add_token(t);
       }
-      else if (t.type == Token::TokenType::RIGHT_PAREN) {
+      else if (t.type == Token::TokenType::RIGHT_PAREN || t.type == Token::TokenType::COMMA) {
         // Pop operators off the stack until we reach the LEFT_PAREN
         while (operator_stack.last().type != Token::TokenType::LEFT_PAREN) {
           Token top = operator_stack.last();
@@ -1257,7 +1386,8 @@ class ExpressionProgram {
           }
           operator_stack.discard_last();
         };
-        operator_stack.discard_last();  // discard the left paren
+        if (t.type == Token::TokenType::RIGHT_PAREN)
+          operator_stack.discard_last();  // right paren discards the left paren
       }
 
       if (stack_size > MAX_STACK) {
@@ -1320,6 +1450,9 @@ class ExpressionProgram {
 
       if (arg1_type == eValueType::VEC && arg2_type == eValueType::VEC)
         return token_name + TIP_("Cannot perform this operation on a vector");
+    }
+    else if (t.num_args() == 3) {
+      return token_name + TIP_("incorrect argument type");
     }
 
     // Catch all error message
@@ -1410,7 +1543,7 @@ class ExpressionProgram {
 
     inline void replace_float(float val, int offset = 0)
     {
-      stack[top_idx + offset] = val;
+      stack[top_idx - offset] = val;
     }
 
     inline void replace_int(int val, int offset = 0)
@@ -1618,6 +1751,32 @@ class ExpressionProgram {
           int res = a < b ? a : b;
           stack.push_int(res);
         } break;
+        case Token::TokenType::FUNCTION_ABS: {
+          float res = abs(stack.peek_float());
+          stack.replace_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_ABS_INT: {
+          int res = abs(stack.peek_int());
+          stack.replace_int(res);
+        } break;
+        case Token::TokenType::FUNCTION_SIGN: {
+          float f = stack.peek_float();
+          int res = (f > 0) - (f < 0);
+          stack.replace_int(res);
+        } break;
+        case Token::TokenType::FUNCTION_SIGN_INT: {
+          int v = stack.peek_int();
+          int res = (v > 0) - (v < 0);
+          stack.replace_int(res);
+        } break;
+        case Token::TokenType::FUNCTION_TO_RADIANS: {
+          float res = stack.peek_float() * (M_PI / 180);
+          stack.replace_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_TO_DEGREES: {
+          float res = stack.peek_float() * (180 / M_PI);
+          stack.replace_float(res);
+        } break;
         case Token::TokenType::CONVERT_INT_FLOAT: {
           int offset = t.value;  // may not be top of stack to convert
           int i = stack.peek_int(offset);
@@ -1630,6 +1789,10 @@ class ExpressionProgram {
           int res = (int)f;
           stack.replace_int(res, offset);
         } break;
+        case Token::TokenType::FUNCTION_VECTOR:
+          // This doesn't actually have to do anything
+          // The three arguments on the stack are now the vector
+          break;
         case Token::TokenType::LEFT_PAREN:
         case Token::TokenType::RIGHT_PAREN:
         case Token::TokenType::NONE:
