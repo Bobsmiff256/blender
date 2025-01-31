@@ -73,6 +73,23 @@ struct Token {
     OPERATOR_POWER_INT,
     OPERATOR_MODULO,
     OPERATOR_MODULO_INT,
+    OPERATOR_EQUAL,
+    OPERATOR_EQUAL_INT,
+    OPERATOR_EQUAL_VEC,
+    OPERATOR_NOT_EQUAL,
+    OPERATOR_NOT_EQUAL_INT,
+    OPERATOR_NOT_EQUAL_VEC,
+    OPERATOR_GREATER,
+    OPERATOR_GREATER_INT,
+    OPERATOR_GREATER_EQUAL,
+    OPERATOR_GREATER_EQUAL_INT,
+    OPERATOR_LESS,
+    OPERATOR_LESS_INT,
+    OPERATOR_LESS_EQUAL,
+    OPERATOR_LESS_EQUAL_INT,
+    FIRST_BOOLEAN_OPERATOR,
+    OPERATOR_AND = FIRST_BOOLEAN_OPERATOR,
+    OPERATOR_OR,
     FIRST_POSTFIX_OPERATOR,
     OPERATOR_GET_MEMBER_VEC = FIRST_POSTFIX_OPERATOR,
     // Functions
@@ -96,6 +113,14 @@ struct Token {
     FUNCTION_TO_RADIANS,
     FUNCTION_TO_DEGREES,
     FUNCTION_VECTOR,
+    FUNCTION_NOT,
+    FUNCTION_LOG,
+    FUNCTION_LN,
+    FUNCTION_POW,
+    FUNCTION_EXP,
+    FUNCTION_IF,
+    FUNCTION_IF_INT,
+    FUNCTION_IF_VEC,
     CONVERT_INT_FLOAT,
     CONVERT_FLOAT_INT,
     NUM
@@ -145,7 +170,6 @@ struct Token {
   {
     return type >= TokenType::FIRST_POSTFIX_OPERATOR && type < TokenType::NUM;
   }
-
   inline float get_value_as_float() const
   {
     return *reinterpret_cast<const float *>(&value);
@@ -156,6 +180,7 @@ struct Token {
   inline int num_args() const;
   inline eValueType result_type() const;
   static inline eValueType result_type(TokenType t);
+  static inline bool is_boolean_op(TokenType t);
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -214,6 +239,25 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::OPERATOR_POWER_INT, "OP_POWER_I", 8, EV::INT, 2, EV::INT, EV::INT},
     {T::OPERATOR_MODULO, "OP_MODULO_F", 2, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
     {T::OPERATOR_MODULO_INT, "OP_MODULO_I", 2, EV::INT, 2, EV::INT, EV::INT},
+    // Comparison
+    {T::OPERATOR_EQUAL, "OP_EQUAL_F", -1, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_EQUAL_INT, "OP_EQUAL_I", -1, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_EQUAL_VEC, "OP_EQUAL_VEC", -1, EV::INT, 2, EV::VEC, EV::VEC},
+    {T::OPERATOR_NOT_EQUAL, "OP_NOT_EQUAL_F", -1, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_NOT_EQUAL_INT, "OP_NOT_EQUAL_I", -1, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_NOT_EQUAL_VEC, "OP_NOT_EQUAL_VEC", -1, EV::INT, 2, EV::VEC, EV::VEC},
+    {T::OPERATOR_GREATER, "OP_GREATER", 0, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_GREATER_INT, "OP_GREATER_I", 0, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_GREATER_EQUAL, "OP_GREATER_EQUAL", 0, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_GREATER_EQUAL_INT, "OP_GREATER_EQUAL_I", 0, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_LESS, "OP_LESS", 0, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_LESS_INT, "OP_LESS_I", 0, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_LESS_EQUAL, "OP_LESS_EQUAL", 0, EV::INT, 2, EV::FLOAT, EV::FLOAT},
+    {T::OPERATOR_LESS_EQUAL_INT, "OP_LESS_EQUAL_INT", 0, EV::INT, 2, EV::INT, EV::INT},
+    // Boolean ops
+    {T::OPERATOR_AND, "OP_AND", -2, EV::INT, 2, EV::INT, EV::INT},
+    {T::OPERATOR_OR, "OP_OR", -3, EV::INT, 2, EV::INT, EV::INT},
+    // Postfix ops
     {T::OPERATOR_GET_MEMBER_VEC, "OP_READ_MEMBER_V", 9, EV::FLOAT, 1, EV::VEC, NA},
     // Functions
     {T::FUNCTION_SQUARE_ROOT, "FN_SQUARE_ROOT", 9, EV::FLOAT, 1, EV::FLOAT, NA},
@@ -235,6 +279,14 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::FUNCTION_TO_RADIANS, "FN_TO_RADIANS", 9, EV::FLOAT, 1, EV::FLOAT, NA},
     {T::FUNCTION_TO_DEGREES, "FN_TO_DEGREES", 9, EV::FLOAT, 1, EV::FLOAT, NA},
     {T::FUNCTION_VECTOR, "FN_VECTOR", 9, EV::VEC, 3, EV::FLOAT, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_NOT, "FUNCTION_NOT", 9, EV::INT, 1, EV::INT},
+    {T::FUNCTION_LOG, "FUNCTION_LOG", 9, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_LN, "FUNCTION_LN", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_POW, "FUNCTION_POW", 9, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_EXP, "FUNCTION_EXP", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_IF, "FUNCTION_IF", 9, EV::FLOAT, 3, EV::INT, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_IF_INT, "FUNCTION_IF_I", 9, EV::INT, 3, EV::INT, EV::INT, EV::INT},
+    {T::FUNCTION_IF_VEC, "FUNCTION_IF_VEC", 9, EV::VEC, 3, EV::INT, EV::VEC, EV::VEC},
     {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", 9, EV::FLOAT, 1, EV::INT, NA},
     {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", 9, EV::INT, 1, EV::FLOAT, NA},
 };
@@ -260,14 +312,31 @@ inline Token::eValueType Token::result_type(TokenType t)
 {
   return token_info[(int)t].result_type;
 }
+inline bool Token::is_boolean_op(Token::TokenType t)
+{
+  return t >= Token::TokenType::FIRST_BOOLEAN_OPERATOR &&
+         t < Token::TokenType::FIRST_POSTFIX_OPERATOR;
+}
 
 #ifndef NDEBUG
 // Check that token info is correctly size and has entries in correct order
 void token_info_check()
 {
   BLI_assert(sizeof(token_info) / sizeof(TokenInfo) == (int)T::NUM);
-  for (int t = (int)Token::TokenType::NONE; t < (int)Token::TokenType::NUM; t++)
+  for (int t = (int)Token::TokenType::NONE; t < (int)Token::TokenType::NUM; t++) {
     BLI_assert(token_info[t].type == (Token::TokenType)t);
+
+    int num_args = token_info[t].num_args;
+    if (num_args >= 1) {
+      BLI_assert(token_info[t].arg1_type != EV::NONE);
+    }
+    if (num_args >= 2) {
+      BLI_assert(token_info[t].arg2_type != EV::NONE);
+    }
+    if (num_args >= 3) {
+      BLI_assert(token_info[t].arg3_type != EV::NONE);
+    }
+  }
 }
 #endif
 
@@ -307,6 +376,48 @@ constexpr func_lookup func_table[] = {
     {"to_degrees", Token::TokenType::FUNCTION_TO_DEGREES},
     {"vec", Token::TokenType::FUNCTION_VECTOR},
     {"vector", Token::TokenType::FUNCTION_VECTOR},
+    {"not", Token::TokenType::FUNCTION_NOT},
+    {"log", Token::TokenType::FUNCTION_LOG},
+    {"logarithm", Token::TokenType::FUNCTION_LOG},
+    {"ln", Token::TokenType::FUNCTION_LN},
+    {"pow", Token::TokenType::FUNCTION_POW},
+    {"power", Token::TokenType::FUNCTION_POW},
+    {"exp", Token::TokenType::FUNCTION_EXP},
+    {"exponential", Token::TokenType::FUNCTION_EXP},
+    {"if", Token::TokenType::FUNCTION_IF},
+};
+
+// List of possible overloads for operator and function token types
+struct overload_set {
+  Token::TokenType base, alt1, alt2, alt3, alt4, alt5;
+  static const int max_overloads = 5;
+};
+
+constexpr const overload_set overloads[] = {
+    // Single op functions
+    {T::OPERATOR_UNARY_MINUS, T::OPERATOR_UNARY_MINUS_INT, T::OPERATOR_UNARY_MINUS_VEC},
+    {T::FUNCTION_ABS, T::FUNCTION_ABS_INT},
+    {T::FUNCTION_SIGN, T::FUNCTION_SIGN_INT},
+    // Two op functions
+    {T::OPERATOR_PLUS, T::OPERATOR_PLUS_INT, T::OPERATOR_PLUS_VEC},
+    {T::OPERATOR_MINUS, T::OPERATOR_MINUS_INT, T::OPERATOR_MINUS_VEC},
+    {T::OPERATOR_MULTIPLY,
+     T::OPERATOR_MULTIPLY_INT,
+     T::OPERATOR_MULTIPLY_VEC_FLOAT,
+     T::OPERATOR_MULTIPLY_FLOAT_VEC},
+    {T::OPERATOR_DIVIDE, T::OPERATOR_DIVIDE_INT, T::OPERATOR_DIVIDE_VEC_FLOAT},
+    {T::OPERATOR_POWER, T::OPERATOR_POWER_INT},
+    {T::OPERATOR_MODULO, T::OPERATOR_MODULO_INT},
+    {T::OPERATOR_EQUAL, T::OPERATOR_EQUAL_INT, T::OPERATOR_EQUAL_VEC},
+    {T::OPERATOR_NOT_EQUAL, T::OPERATOR_NOT_EQUAL_INT, T::OPERATOR_NOT_EQUAL_VEC},
+    {T::OPERATOR_GREATER, T::OPERATOR_GREATER_INT},
+    {T::OPERATOR_GREATER_EQUAL, T::OPERATOR_GREATER_EQUAL_INT},
+    {T::OPERATOR_LESS, T::OPERATOR_LESS_INT},
+    {T::OPERATOR_LESS_EQUAL, T::OPERATOR_LESS_EQUAL_INT},
+    {T::FUNCTION_MAX, T::FUNCTION_MAX_INT},
+    {T::FUNCTION_MIN, T::FUNCTION_MIN_INT},
+    // Three op functions
+    {T::FUNCTION_IF, T::FUNCTION_IF_INT, T::FUNCTION_IF_VEC},
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -798,6 +909,51 @@ class ExpressionParser {
     }
 
     read_pos--;
+
+    // Try 2 character ops
+    if (input.length() - read_pos < 2) {
+      return Token::TokenType::NONE;
+    }
+    std::string two_char_op = input.substr(read_pos, 2);
+    read_pos += 2;
+    if (two_char_op == "==")
+      return Token::TokenType::OPERATOR_EQUAL;
+    if (two_char_op == "!=")
+      return Token::TokenType::OPERATOR_NOT_EQUAL;
+    if (two_char_op == ">=")
+      return Token::TokenType::OPERATOR_GREATER_EQUAL;
+    if (two_char_op == "<=")
+      return Token::TokenType::OPERATOR_LESS_EQUAL;
+    if (two_char_op == "or")
+      return Token::TokenType::OPERATOR_OR;
+    if (two_char_op == "OR")
+      return Token::TokenType::OPERATOR_OR;
+    if (two_char_op == "||")
+      return Token::TokenType::OPERATOR_OR;
+    if (two_char_op == "&&")
+      return Token::TokenType::OPERATOR_AND;
+
+    // Try the single char ops that are also start of two char ops
+    read_pos -= 1;
+    switch (op_char) {
+      case '>':
+        return Token::TokenType::OPERATOR_GREATER;
+      case '<':
+        return Token::TokenType::OPERATOR_LESS;
+      case '=':
+        return Token::TokenType::OPERATOR_EQUAL;
+    }
+
+    // Try three character ops
+    read_pos -= 1;
+    if (input.length() - read_pos < 3) {
+      return Token::TokenType::NONE;
+    }
+    std::string three_char_op = input.substr(read_pos, 3);
+    read_pos += 3;
+    if (three_char_op == "and" || three_char_op == "AND")
+      return Token::TokenType::OPERATOR_AND;
+
     return Token::TokenType::NONE;
   }
 
@@ -956,34 +1112,73 @@ class ExpressionProgram {
     return type == eValueType::VEC ? 3 : 1;
   }
 
+  static bool check_arguments_match(Token::TokenType func, Token::eValueType arg_type)
+  {
+    if (token_info[(int)func].arg1_type != arg_type)
+      return false;
+    return true;
+  }
+
+  static bool check_arguments_match(Token::TokenType func,
+                                    Token::eValueType arg1_type,
+                                    Token::eValueType arg2_type)
+  {
+    if (token_info[(int)func].arg1_type != arg1_type)
+      return false;
+    if (token_info[(int)func].arg2_type != arg2_type)
+      return false;
+    return true;
+  }
+
+  static bool check_arguments_match(Token::TokenType func,
+                                    Token::eValueType arg1_type,
+                                    Token::eValueType arg2_type,
+                                    Token::eValueType arg3_type)
+  {
+    if (token_info[(int)func].arg1_type != arg1_type)
+      return false;
+    if (token_info[(int)func].arg2_type != arg2_type)
+      return false;
+    if (token_info[(int)func].arg3_type != arg3_type)
+      return false;
+    return true;
+  }
+
+  static const overload_set *find_overloads(TokenType t)
+  {
+    const size_t overload_table_size = sizeof(overloads) / sizeof(overload_set);
+    for (int i = 0; i < overload_table_size; i++) {
+      if (overloads[i].base == t) {
+        return &overloads[i];
+      }
+    }
+
+    return nullptr;
+  }
+
   // Find the correct operator or function token for a particular argument type
   static TokenType get_op_version_for_type(TokenType base_type, eValueType arg_type)
   {
-    if (base_type == TokenType::OPERATOR_GET_MEMBER_VEC && arg_type == eValueType::VEC)
+    // Check if base type args are correct
+    if (check_arguments_match(base_type, arg_type))
       return base_type;
 
-    // Most operators and functions default to float args
-    // If there are exceptions they should be checked before here
-    if (arg_type == eValueType::FLOAT)
-      return base_type;
+    // Find if there is an overload list for this type
+    const overload_set *overload_list = find_overloads(base_type);
+    if (!overload_list)
+      return TokenType::NONE;
 
-    switch (base_type) {
-      case TokenType::OPERATOR_UNARY_MINUS:
-        if (arg_type == eValueType::VEC)
-          return TokenType::OPERATOR_UNARY_MINUS_VEC;
-        if (arg_type == eValueType::INT)
-          return TokenType::OPERATOR_UNARY_MINUS_INT;
-        break;
-      case TokenType::OPERATOR_POWER:
-        if (arg_type == eValueType::INT)
-          return TokenType::OPERATOR_POWER_INT;
-      case TokenType::FUNCTION_ABS:
-        if (arg_type == eValueType::INT)
-          return TokenType::FUNCTION_ABS_INT;
-      case TokenType::FUNCTION_SIGN:
-        if (arg_type == eValueType::INT)
-          return TokenType::FUNCTION_SIGN_INT;
-        break;
+    // Check overloads
+    for (int i = 0; i < overload_set::max_overloads; i++) {
+      TokenType alt = i == 0 ? overload_list->alt1 :
+                      i == 1 ? overload_list->alt2 :
+                      i == 2 ? overload_list->alt3 :
+                      i == 3 ? overload_list->alt4 :
+                               overload_list->alt5;
+      if (alt == TokenType::NONE)
+        return TokenType::NONE;
+      if (check_arguments_match(alt, arg_type))
+        return alt;
     }
 
     // No conversion found
@@ -992,57 +1187,29 @@ class ExpressionProgram {
 
   // Find the correct operator or function token for a particular argument pair
   static TokenType get_op_version_for_type(TokenType base_type,
-                                           eValueType arg_type1,
-                                           eValueType arg_type2)
+                                           eValueType arg1_type,
+                                           eValueType arg2_type)
   {
-    // All operators and functions default to float args
-    // If there are ever any exceptions they can be checked before here
-    if (arg_type1 == eValueType::FLOAT && arg_type2 == eValueType::FLOAT)
+    // Check if base type args are correct
+    if (check_arguments_match(base_type, arg1_type, arg2_type))
       return base_type;
 
-    switch (base_type) {
-      case TokenType::OPERATOR_PLUS:
-        if (arg_type1 == eValueType::VEC && arg_type2 == eValueType::VEC)
-          return TokenType::OPERATOR_PLUS_VEC;
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_PLUS_INT;
-        break;
-      case TokenType::OPERATOR_MINUS:
-        if (arg_type1 == eValueType::VEC && arg_type2 == eValueType::VEC)
-          return TokenType::OPERATOR_MINUS_VEC;
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_MINUS_INT;
-        break;
-      case TokenType::OPERATOR_MULTIPLY:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_MULTIPLY_INT;
-        if (arg_type1 == eValueType::VEC && arg_type2 == eValueType::FLOAT)
-          return TokenType::OPERATOR_MULTIPLY_VEC_FLOAT;
-        if (arg_type1 == eValueType::FLOAT && arg_type2 == eValueType::VEC)
-          return TokenType::OPERATOR_MULTIPLY_FLOAT_VEC;
-        break;
-      case TokenType::OPERATOR_DIVIDE:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_DIVIDE_INT;
-        if (arg_type1 == eValueType::VEC && arg_type2 == eValueType::FLOAT)
-          return TokenType::OPERATOR_DIVIDE_VEC_FLOAT;
-        break;
-      case TokenType::OPERATOR_POWER:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_POWER_INT;
-        break;
-      case TokenType::OPERATOR_MODULO:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::OPERATOR_MODULO_INT;
-        break;
-      case TokenType::FUNCTION_MAX:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::FUNCTION_MAX_INT;
-        break;
-      case TokenType::FUNCTION_MIN:
-        if (arg_type1 == eValueType::INT && arg_type2 == eValueType::INT)
-          return TokenType::FUNCTION_MIN_INT;
-        break;
+    // Find if there is an overload list for this type
+    const overload_set *overload_list = find_overloads(base_type);
+    if (!overload_list)
+      return TokenType::NONE;
+
+    // Check overloads
+    for (int i = 0; i < overload_set::max_overloads; i++) {
+      TokenType alt = i == 0 ? overload_list->alt1 :
+                      i == 1 ? overload_list->alt2 :
+                      i == 2 ? overload_list->alt3 :
+                      i == 3 ? overload_list->alt4 :
+                               overload_list->alt5;
+      if (alt == TokenType::NONE)
+        return TokenType::NONE;
+      if (check_arguments_match(alt, arg1_type, arg2_type))
+        return alt;
     }
 
     // No conversion found
@@ -1055,14 +1222,26 @@ class ExpressionProgram {
                                            eValueType arg2_type,
                                            eValueType arg3_type)
   {
-    // Most operators and functions default to float args
-    // If there are exceptions they should be checked before here
-    if (arg1_type == eValueType::FLOAT && arg2_type == eValueType::FLOAT &&
-        arg3_type == eValueType::FLOAT)
+    // Check if base type args are correct
+    if (check_arguments_match(base_type, arg1_type, arg2_type, arg3_type))
       return base_type;
 
-    switch (base_type) {
-      // TODO
+    // Find if there is an overload list for this type
+    const overload_set *overload_list = find_overloads(base_type);
+    if (!overload_list)
+      return TokenType::NONE;
+
+    // Check overloads
+    for (int i = 0; i < overload_set::max_overloads; i++) {
+      TokenType alt = i == 0 ? overload_list->alt1 :
+                      i == 1 ? overload_list->alt2 :
+                      i == 2 ? overload_list->alt3 :
+                      i == 3 ? overload_list->alt4 :
+                               overload_list->alt5;
+      if (alt == TokenType::NONE)
+        return TokenType::NONE;
+      if (check_arguments_match(alt, arg1_type, arg2_type, arg3_type))
+        return alt;
     }
 
     // No conversion found
@@ -1075,6 +1254,7 @@ class ExpressionProgram {
                                    eValueType to_type,
                                    bool allowed_implicit_only = true)
   {
+
     if (from_type == eValueType::INT && to_type == eValueType::FLOAT)
       return TokenType::CONVERT_INT_FLOAT;
 
@@ -1247,6 +1427,21 @@ class ExpressionProgram {
         arg3_type = eValueType::FLOAT;
       }
       return all_float_op;
+    }
+
+    // see if we can convert args 2 and 3 to float
+    TokenType last2_float_op = get_op_version_for_type(
+        type, arg1_type, eValueType::FLOAT, eValueType::FLOAT);
+    if (last2_float_op != TokenType::NONE && is_scalar(arg2_type) && is_scalar(arg3_type)) {
+      if (arg2_type == eValueType::INT) {
+        output.add_token(TokenType::CONVERT_INT_FLOAT, 1);
+        arg2_type = eValueType::FLOAT;
+      }
+      if (arg3_type == eValueType::INT) {
+        output.add_token(TokenType::CONVERT_INT_FLOAT, 0);
+        arg3_type = eValueType::FLOAT;
+      }
+      return last2_float_op;
     }
 
     return TokenType::NONE;
@@ -1648,12 +1843,12 @@ class ExpressionProgram {
         } break;
         case Token::TokenType::OPERATOR_DIVIDE: {
           auto [arg1, arg2] = stack.pop_two_floats();
-          float res = arg1 / arg2;
+          float res = arg2 != 0 ? arg1 / arg2 : 0;
           stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_DIVIDE_INT: {
           auto [arg1, arg2] = stack.pop_two_ints();
-          int res = arg1 / arg2;
+          int res = arg2 != 0 ? arg1 / arg2 : 0;
           stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_DIVIDE_VEC_FLOAT: {
@@ -1674,12 +1869,92 @@ class ExpressionProgram {
         } break;
         case Token::TokenType::OPERATOR_MODULO: {
           auto [arg1, arg2] = stack.pop_two_floats();
-          float res = fmodf(arg1, arg2);
+          float res = arg2 != 0 ? fmodf(arg1, arg2) : 0;
           stack.push_float(res);
         } break;
         case Token::TokenType::OPERATOR_MODULO_INT: {
           auto [arg1, arg2] = stack.pop_two_ints();
-          int res = arg1 % arg2;
+          int res = arg2 != 0 ? arg1 % arg2 : 0;
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_EQUAL: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 == arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_EQUAL_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 == arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_EQUAL_VEC: {
+          auto [arg1, arg2] = stack.pop_two_vectors();
+          bool res = (arg1 == arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_NOT_EQUAL: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 != arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_NOT_EQUAL_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 != arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_NOT_EQUAL_VEC: {
+          auto [arg1, arg2] = stack.pop_two_vectors();
+          bool res = (arg1 != arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_GREATER: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 > arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_GREATER_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 > arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_GREATER_EQUAL: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 >= arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_GREATER_EQUAL_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 >= arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_LESS: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 < arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_LESS_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 < arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_LESS_EQUAL: {
+          auto [arg1, arg2] = stack.pop_two_floats();
+          bool res = (arg1 <= arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_LESS_EQUAL_INT: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 <= arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_AND: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 && arg2);
+          stack.push_int(res);
+        } break;
+        case Token::TokenType::OPERATOR_OR: {
+          auto [arg1, arg2] = stack.pop_two_ints();
+          bool res = (arg1 || arg2);
           stack.push_int(res);
         } break;
         case Token::TokenType::OPERATOR_UNARY_MINUS: {
@@ -1776,6 +2051,48 @@ class ExpressionProgram {
         case Token::TokenType::FUNCTION_TO_DEGREES: {
           float res = stack.peek_float() * (180 / M_PI);
           stack.replace_float(res);
+        } break;
+        case Token::TokenType::FUNCTION_NOT: {
+          stack.push_int(stack.pop_int() == 0);
+        } break;
+        case TokenType::FUNCTION_LOG: {
+          auto [a, b] = stack.pop_two_floats();
+          float res = log(a) / log(b);
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_LN: {
+          float res = log(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_POW: {
+          auto [a, b] = stack.pop_two_floats();
+          float res = pow(a, b);
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_EXP: {
+          float res = exp(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_IF: {
+          float false_val = stack.pop_float();
+          float true_val = stack.pop_float();
+          int cond = stack.pop_int();
+          float res = cond ? true_val : false_val;
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_IF_INT: {
+          int false_val = stack.pop_int();
+          int true_val = stack.pop_int();
+          int cond = stack.pop_int();
+          int res = cond ? true_val : false_val;
+          stack.push_int(res);
+        } break;
+        case TokenType::FUNCTION_IF_VEC: {
+          float3 false_val = stack.pop_vector();
+          float3 true_val = stack.pop_vector();
+          int cond = stack.pop_int();
+          float3 res = cond ? true_val : false_val;
+          stack.push_vector(res);
         } break;
         case Token::TokenType::CONVERT_INT_FLOAT: {
           int offset = t.value;  // may not be top of stack to convert
@@ -2007,7 +2324,7 @@ static void node_declare(NodeDeclarationBuilder &b)
   if (node == nullptr)
     return;
 
-  b.add_input<decl::String>("Expression").default_value(std::string("x + y"));
+  b.add_input<decl::String>("Expression").default_value(std::string("x"));
 
   // Add the variable number of input sockets
   const NodeGeometryExpression &storage = node_storage(*node);
@@ -2044,9 +2361,9 @@ static void node_init(bNodeTree * /*tree*/, bNode *node)
   data->socket_items.items_array = MEM_cnew_array<NodeExpressionItem>(2, __func__);
   ExpressionItemsAccessor::init_with_socket_type_and_name(
       *node, data->socket_items.items_array[0], eNodeSocketDatatype::SOCK_FLOAT, "x");
-  ExpressionItemsAccessor::init_with_socket_type_and_name(
-      *node, data->socket_items.items_array[1], eNodeSocketDatatype::SOCK_FLOAT, "y");
-  data->socket_items.items_num = 2;
+  //  ExpressionItemsAccessor::init_with_socket_type_and_name(
+  //      *node, data->socket_items.items_array[1], eNodeSocketDatatype::SOCK_FLOAT, "y");
+  data->socket_items.items_num = 1;
 }
 
 static void node_free_storage(bNode *node)
