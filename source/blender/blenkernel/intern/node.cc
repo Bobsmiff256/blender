@@ -1223,7 +1223,7 @@ void node_tree_blend_read_data(BlendDataReader *reader, ID *owner_id, bNodeTree 
         }
 
         default:
-          if (node->is_type("GeometryNodeExpression")) {
+          if (STREQ(node->idname, "GeometryNodeExpression")) {
             nodes::socket_items::blend_read_data<nodes::ExpressionItemsAccessor>(reader, *node);
             break;
           }
