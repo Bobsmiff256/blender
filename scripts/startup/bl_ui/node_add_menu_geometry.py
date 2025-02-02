@@ -678,6 +678,7 @@ class NODE_MT_category_GEO_UTILITIES_MATH(Menu):
         node_add_menu.add_node_type(layout, "FunctionNodeIntegerMath")
         node_add_menu.add_node_type(layout, "ShaderNodeClamp")
         node_add_menu.add_node_type(layout, "FunctionNodeCompare")
+        node_add_menu.add_node_type(layout, "GeometryNodeExpression")
         node_add_menu.add_node_type(layout, "ShaderNodeFloatCurve")
         node_add_menu.add_node_type(layout, "FunctionNodeFloatToInt")
         node_add_menu.add_node_type(layout, "FunctionNodeHashValue")
