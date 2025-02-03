@@ -56,6 +56,7 @@ struct Token {
     OPERATOR_UNARY_MINUS = FIRST_OPERATOR,
     OPERATOR_UNARY_MINUS_INT,
     OPERATOR_UNARY_MINUS_VEC,
+    OPERATOR_UNARY_NOT,
     OPERATOR_PLUS,
     OPERATOR_PLUS_INT,
     OPERATOR_PLUS_VEC,
@@ -121,6 +122,13 @@ struct Token {
     FUNCTION_IF,
     FUNCTION_IF_INT,
     FUNCTION_IF_VEC,
+    FUNCTION_CEIL,
+    FUNCTION_FLOOR,
+    FUNCTION_FRAC,
+    FUNCTION_ROUND,
+    FUNCTION_TRUNCATE,
+    FUNCTION_COMPARE,
+    FUNCTION_COMPARE_VEC,
     CONVERT_INT_FLOAT,
     CONVERT_FLOAT_INT,
     NUM
@@ -222,6 +230,7 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::OPERATOR_UNARY_MINUS, "OP_UNARY_MINUS_F", 7, EV::FLOAT, 1, EV::FLOAT, NA},
     {T::OPERATOR_UNARY_MINUS_INT, "OP_UNARY_MINUS_I", 7, EV::INT, 1, EV::INT, NA},
     {T::OPERATOR_UNARY_MINUS_VEC, "OP_UNARY_MINUS_V", 7, EV::VEC, 1, EV::VEC, NA},
+    {T::OPERATOR_UNARY_NOT, "OP_UNARY_NOT", 7, EV::INT, 1, EV::INT},
     {T::OPERATOR_PLUS, "OP_PLUS_F", 1, EV::FLOAT, 2, EV::FLOAT, EV::FLOAT},
     {T::OPERATOR_PLUS_INT, "OP_PLUS_I", 1, EV::INT, 2, EV::INT, EV::INT},
     {T::OPERATOR_PLUS_VEC, "OP_PLUS_V", 1, EV::VEC, 2, EV::VEC, EV::VEC},
@@ -287,6 +296,13 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::FUNCTION_IF, "FUNCTION_IF", 9, EV::FLOAT, 3, EV::INT, EV::FLOAT, EV::FLOAT},
     {T::FUNCTION_IF_INT, "FUNCTION_IF_I", 9, EV::INT, 3, EV::INT, EV::INT, EV::INT},
     {T::FUNCTION_IF_VEC, "FUNCTION_IF_VEC", 9, EV::VEC, 3, EV::INT, EV::VEC, EV::VEC},
+    {T::FUNCTION_CEIL, "FUNCTION_CEIL", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_FLOOR, "FUNCTION_FLOOR", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_FRAC, "FUNCTION_FRAC", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_ROUND, "FUNCTION_ROUND", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_TRUNCATE, "FUNCTION_TRUNCATE", 9, EV::FLOAT, 1, EV::FLOAT},
+    {T::FUNCTION_COMPARE, "FUNCTION_COMPARE", 9, EV::INT, 3, EV::FLOAT, EV::FLOAT, EV::FLOAT},
+    {T::FUNCTION_COMPARE_VEC, "FUNCTION_COMPARE_VEC", 9, EV::INT, 3, EV::VEC, EV::VEC, EV::FLOAT},
     {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", 9, EV::FLOAT, 1, EV::INT, NA},
     {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", 9, EV::INT, 1, EV::FLOAT, NA},
 };
@@ -385,6 +401,14 @@ constexpr func_lookup func_table[] = {
     {"exp", Token::TokenType::FUNCTION_EXP},
     {"exponential", Token::TokenType::FUNCTION_EXP},
     {"if", Token::TokenType::FUNCTION_IF},
+    {"ceil", Token::TokenType::FUNCTION_CEIL},
+    {"floor", Token::TokenType::FUNCTION_FLOOR},
+    {"frac", Token::TokenType::FUNCTION_FRAC},
+    {"fraction", Token::TokenType::FUNCTION_FRAC},
+    {"round", Token::TokenType::FUNCTION_ROUND},
+    {"truncate", Token::TokenType::FUNCTION_TRUNCATE},
+    {"trunc", Token::TokenType::FUNCTION_TRUNCATE},
+    {"compare", Token::TokenType::FUNCTION_COMPARE},
 };
 
 // List of possible overloads for operator and function token types
@@ -418,7 +442,7 @@ constexpr const overload_set overloads[] = {
     {T::FUNCTION_MIN, T::FUNCTION_MIN_INT},
     // Three op functions
     {T::FUNCTION_IF, T::FUNCTION_IF_INT, T::FUNCTION_IF_VEC},
-};
+    {T::FUNCTION_COMPARE, T::FUNCTION_COMPARE_VEC}};
 
 ////////////////////////////////////////////////////////////////////////////
 // TokenQueue
@@ -576,11 +600,20 @@ class ExpressionParser {
     if (read_pos == input.length())
       return false;
 
+    // Check for unary operators
+    Token::TokenType unary_op = Token::TokenType::NONE;
     // Check for unary minus operator. Skip if followed by digit
     if (input.at(read_pos) == '-' && read_pos < input.length() - 1 &&
         !isdigit(input.at(read_pos + 1)))
     {
-      output.add_token(Token::TokenType::OPERATOR_UNARY_MINUS, 0);
+      unary_op = Token::TokenType::OPERATOR_UNARY_MINUS;
+    }
+    else if (input.at(read_pos) == '!') {
+      unary_op = Token::TokenType::OPERATOR_UNARY_NOT;
+    }
+
+    if (unary_op != Token::TokenType::NONE) {
+      output.add_token(unary_op, 0);
       read_pos++;
       if (!parse_operand(input, read_pos, output)) {
         set_error_if_none(TIP_("Expected operand after unary operator"), read_pos);
@@ -1960,6 +1993,9 @@ class ExpressionProgram {
         case Token::TokenType::OPERATOR_UNARY_MINUS: {
           stack.push_float(-stack.pop_float());
         } break;
+        case Token::TokenType::OPERATOR_UNARY_NOT: {
+          stack.push_int(!stack.pop_int());
+        } break;
         case Token::TokenType::OPERATOR_UNARY_MINUS_INT: {
           stack.push_int(-stack.pop_int());
         } break;
@@ -2094,6 +2130,39 @@ class ExpressionProgram {
           float3 res = cond ? true_val : false_val;
           stack.push_vector(res);
         } break;
+        case TokenType::FUNCTION_CEIL: {
+          float res = ceilf(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_FLOOR: {
+          float res = floorf(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_FRAC: {
+          float res = fractf(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_ROUND: {
+          float res = roundf(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_TRUNCATE: {
+          float res = truncf(stack.pop_float());
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_COMPARE: {
+          float epsilon = stack.pop_float();
+          auto [x1, x2] = stack.pop_two_floats();
+          int res = compare_ff(x1, x2, epsilon);
+          stack.push_int(res);
+        } break;
+        case TokenType::FUNCTION_COMPARE_VEC: {
+          float epsilon = stack.pop_float();
+          auto [v1, v2] = stack.pop_two_vectors();
+          int res = compare_ff(v1.x, v2.x, epsilon) && compare_ff(v1.y, v2.y, epsilon) &&
+                    compare_ff(v1.z, v2.z, epsilon);
+          stack.push_int(res);
+        } break;
         case Token::TokenType::CONVERT_INT_FLOAT: {
           int offset = t.value;  // may not be top of stack to convert
           int i = stack.peek_int(offset);
@@ -2112,6 +2181,7 @@ class ExpressionProgram {
           break;
         case Token::TokenType::LEFT_PAREN:
         case Token::TokenType::RIGHT_PAREN:
+        case Token::TokenType::COMMA:
         case Token::TokenType::NONE:
           // These should not appear in executing programs
           break;
@@ -2324,7 +2394,9 @@ static void node_declare(NodeDeclarationBuilder &b)
   if (node == nullptr)
     return;
 
-  b.add_input<decl::String>("Expression").default_value(std::string("x"));
+  b.add_input<decl::String>("Expression")
+      .default_value(std::string("x"))
+      .compact(true);  // hide_label();
 
   // Add the variable number of input sockets
   const NodeGeometryExpression &storage = node_storage(*node);
@@ -2432,14 +2504,27 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
     return ok;
 
   // If we're connecting to a socket that's renamable, then keep the existing name
-  if (link->fromnode->is_group_input() || link->fromnode->is_group_output())
+  const bNode *f_node = link->fromnode;
+  if (f_node->is_group_input() || f_node->is_group_output() ||
+      f_node->is_type("GeometryNodeRepeatInput") || f_node->is_type("GeometryNodeRepeatOutput") ||
+      f_node->is_type("GeometryNodeForeachGeometryElementInput") ||
+      f_node->is_type("GeometryNodeForeachGeometryElementOutput"))
+  {
+    // Replace any spaces in the name with underscores
+    const char *item_name = storage->socket_items.items_array[item_index].name;
+    bool has_space = false;
+    for (int i = 0; i < strlen(item_name); i++)
+      has_space |= std::isspace(item_name[i]);
+    if (has_space) {
+      auto new_name = BLI_strdup(item_name);
+      for (int i = 0; i < strlen(item_name); i++)
+        if (std::isspace(item_name[i]))
+          new_name[i] = '_';
+      MEM_SAFE_FREE(storage->socket_items.items_array[item_index].name);
+      storage->socket_items.items_array[item_index].name = new_name;
+    }
     return ok;
-  auto from_type = link->fromnode->idname;
-  if (node->is_type("GeometryNodeRepeatInput") || node->is_type("GeometryNodeRepeatOutput") ||
-      node->is_type("GeometryNodeForeachGeometryElementInput") ||
-      node->is_type("GeometryNodeForeachGeometryElementOutput") ||
-      node->is_group_input() /*node->is_type("NODE_GROUP")*/)
-    return ok;
+  }
 
   // If the item has a single char name it's probably ok, so don't change it
   const char *item_name = storage->socket_items.items_array[item_index].name;
