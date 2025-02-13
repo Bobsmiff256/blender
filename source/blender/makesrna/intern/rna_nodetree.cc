@@ -1023,7 +1023,7 @@ static bool rna_NodeTree_valid_socket_type(blender::bke::bNodeTreeType *ntreetyp
   return valid;
 }
 
-static bool rna_NodeTree_unregister(Main * /*bmain*/, StructRNA *type)
+static bool rna_NodeTree_unregister(Main *bmain, StructRNA *type)
 {
   blender::bke::bNodeTreeType *nt = static_cast<blender::bke::bNodeTreeType *>(
       RNA_struct_blender_type_get(type));
@@ -1039,6 +1039,7 @@ static bool rna_NodeTree_unregister(Main * /*bmain*/, StructRNA *type)
 
   /* update while blender is running */
   WM_main_add_notifier(NC_NODE | NA_EDITED, nullptr);
+  BKE_main_ensure_invariants(*bmain);
   return true;
 }
 
@@ -1118,7 +1119,7 @@ static StructRNA *rna_NodeTree_register(Main *bmain,
 
   /* update while blender is running */
   WM_main_add_notifier(NC_NODE | NA_EDITED, nullptr);
-
+  BKE_main_ensure_invariants(*bmain);
   return nt->rna_ext.srna;
 }
 
@@ -1312,7 +1313,7 @@ static PointerRNA rna_NodeTree_active_node_get(PointerRNA *ptr)
 {
   bNodeTree *ntree = static_cast<bNodeTree *>(ptr->data);
   bNode *node = blender::bke::node_get_active(ntree);
-  return rna_pointer_inherit_refine(ptr, &RNA_Node, node);
+  return RNA_pointer_create_with_parent(*ptr, &RNA_Node, node);
 }
 
 static void rna_NodeTree_active_node_set(PointerRNA *ptr,
@@ -1933,7 +1934,7 @@ static void rna_Node_is_registered_node_type_runtime(bContext * /*C*/,
   RNA_parameter_set_lookup(parms, "result", &result);
 }
 
-static bool rna_Node_unregister(Main * /*bmain*/, StructRNA *type)
+static bool rna_Node_unregister(Main *bmain, StructRNA *type)
 {
   blender::bke::bNodeType *nt = static_cast<blender::bke::bNodeType *>(
       RNA_struct_blender_type_get(type));
@@ -1950,6 +1951,7 @@ static bool rna_Node_unregister(Main * /*bmain*/, StructRNA *type)
 
   /* update while blender is running */
   WM_main_add_notifier(NC_NODE | NA_EDITED, nullptr);
+  BKE_main_ensure_invariants(*bmain);
   return true;
 }
 
@@ -2090,7 +2092,7 @@ static StructRNA *rna_Node_register(Main *bmain,
 
   /* update while blender is running */
   WM_main_add_notifier(NC_NODE | NA_EDITED, nullptr);
-
+  BKE_main_ensure_invariants(*bmain);
   return nt->rna_ext.srna;
 }
 
@@ -2420,7 +2422,7 @@ static void rna_Node_internal_links_begin(CollectionPropertyIterator *iter, Poin
   bNodeLink *begin;
   int len;
   blender::bke::node_internal_links(node, &begin, &len);
-  rna_iterator_array_begin(iter, begin, sizeof(bNodeLink), len, false, nullptr);
+  rna_iterator_array_begin(iter, ptr, begin, sizeof(bNodeLink), len, false, nullptr);
 }
 
 /**
@@ -2468,7 +2470,7 @@ static bool rna_NodeInputs_lookup_string(PointerRNA *ptr, const char *key, Point
 {
   bNode *node = static_cast<bNode *>(ptr->data);
   if (bNodeSocket *socket = find_socket_by_key(*node, SOCK_IN, key)) {
-    *r_ptr = RNA_pointer_create_discrete(ptr->owner_id, &RNA_NodeSocket, socket);
+    rna_pointer_create_with_ancestors(*ptr, &RNA_NodeSocket, socket, *r_ptr);
     return true;
   }
   return false;
@@ -2478,7 +2480,7 @@ static bool rna_NodeOutputs_lookup_string(PointerRNA *ptr, const char *key, Poin
 {
   bNode *node = static_cast<bNode *>(ptr->data);
   if (bNodeSocket *socket = find_socket_by_key(*node, SOCK_OUT, key)) {
-    *r_ptr = RNA_pointer_create_discrete(ptr->owner_id, &RNA_NodeSocket, socket);
+    rna_pointer_create_with_ancestors(*ptr, &RNA_NodeSocket, socket, *r_ptr);
     return true;
   }
   return false;
@@ -3567,14 +3569,14 @@ static void rna_Image_Node_update_id(Main *bmain, Scene *scene, PointerRNA *ptr)
 static void rna_NodeOutputFile_slots_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
   bNode *node = static_cast<bNode *>(ptr->data);
-  rna_iterator_listbase_begin(iter, &node->inputs, nullptr);
+  rna_iterator_listbase_begin(iter, ptr, &node->inputs, nullptr);
 }
 
 static PointerRNA rna_NodeOutputFile_slot_file_get(CollectionPropertyIterator *iter)
 {
   bNodeSocket *sock = static_cast<bNodeSocket *>(rna_iterator_listbase_get(iter));
-  PointerRNA ptr = RNA_pointer_create_discrete(
-      iter->parent.owner_id, &RNA_NodeOutputFileSlotFile, sock->storage);
+  PointerRNA ptr = RNA_pointer_create_with_parent(
+      iter->parent, &RNA_NodeOutputFileSlotFile, sock->storage);
   return ptr;
 }
 
@@ -3846,10 +3848,8 @@ static PointerRNA rna_NodeCryptomatte_scene_get(PointerRNA *ptr)
 {
   bNode *node = static_cast<bNode *>(ptr->data);
 
-  Scene *scene = (node->custom1 == CMP_NODE_CRYPTOMATTE_SOURCE_RENDER) ?
-                     reinterpret_cast<Scene *>(node->id) :
-                     nullptr;
-  return rna_pointer_inherit_refine(ptr, &RNA_Scene, scene);
+  ID *scene = (node->custom1 == CMP_NODE_CRYPTOMATTE_SOURCE_RENDER) ? node->id : nullptr;
+  return RNA_id_pointer_create(scene);
 }
 
 static void rna_NodeCryptomatte_scene_set(PointerRNA *ptr, PointerRNA value, ReportList *reports)
@@ -3865,10 +3865,8 @@ static PointerRNA rna_NodeCryptomatte_image_get(PointerRNA *ptr)
 {
   bNode *node = static_cast<bNode *>(ptr->data);
 
-  Image *image = (node->custom1 == CMP_NODE_CRYPTOMATTE_SOURCE_IMAGE) ?
-                     reinterpret_cast<Image *>(node->id) :
-                     nullptr;
-  return rna_pointer_inherit_refine(ptr, &RNA_Image, image);
+  ID *image = (node->custom1 == CMP_NODE_CRYPTOMATTE_SOURCE_IMAGE) ? node->id : nullptr;
+  return RNA_id_pointer_create(image);
 }
 
 static void rna_NodeCryptomatte_image_set(PointerRNA *ptr,
@@ -4166,8 +4164,8 @@ static const EnumPropertyItem *rna_NodeGeometryCaptureAttributeItem_data_type_it
 static PointerRNA rna_NodeOutputFile_slot_layer_get(CollectionPropertyIterator *iter)
 {
   bNodeSocket *sock = static_cast<bNodeSocket *>(rna_iterator_listbase_get(iter));
-  PointerRNA ptr = RNA_pointer_create_discrete(
-      iter->parent.owner_id, &RNA_NodeOutputFileSlotLayer, sock->storage);
+  PointerRNA ptr = RNA_pointer_create_with_parent(
+      iter->parent, &RNA_NodeOutputFileSlotLayer, sock->storage);
   return ptr;
 }
 
@@ -12607,6 +12605,7 @@ static void rna_def_nodes(BlenderRNA *brna)
   define("GeometryNode", "GeometryNodeImportOBJ");
   define("GeometryNode", "GeometryNodeImportPLY");
   define("GeometryNode", "GeometryNodeImportSTL");
+  define("GeometryNode", "GeometryNodeImportCSV");
   define("GeometryNode", "GeometryNodeIndexOfNearest");
   define("GeometryNode", "GeometryNodeIndexSwitch", def_geo_index_switch);
   define("GeometryNode", "GeometryNodeInputActiveCamera");

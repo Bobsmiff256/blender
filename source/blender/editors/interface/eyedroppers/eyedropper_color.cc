@@ -99,13 +99,13 @@ static bool eyedropper_init(bContext *C, wmOperator *op)
     char *prop_data_path = RNA_string_get_alloc(op->ptr, "prop_data_path", nullptr, 0, nullptr);
     BLI_SCOPED_DEFER([&] { MEM_SAFE_FREE(prop_data_path); });
     if (!prop_data_path || prop_data_path[0] == '\0') {
-      MEM_freeN(eye);
+      MEM_delete(eye);
       return false;
     }
     PointerRNA ctx_ptr = RNA_pointer_create_discrete(nullptr, &RNA_Context, C);
     if (!RNA_path_resolve(&ctx_ptr, prop_data_path, &eye->ptr, &eye->prop)) {
       BKE_reportf(op->reports, RPT_ERROR, "Could not resolve path '%s'", prop_data_path);
-      MEM_freeN(eye);
+      MEM_delete(eye);
       return false;
     }
     eye->is_undo = true;
@@ -499,7 +499,7 @@ bool eyedropper_color_sample_fl(bContext *C,
   }
 
   /* Outside the Blender window if we support it. */
-  if ((WM_capabilities_flag() & WM_CAPABILITY_DESKTOP_SAMPLE)) {
+  if (WM_capabilities_flag() & WM_CAPABILITY_DESKTOP_SAMPLE) {
     if (WM_desktop_cursor_sample_read(r_col)) {
       IMB_colormanagement_srgb_to_scene_linear_v3(r_col, r_col);
       return true;
@@ -634,8 +634,8 @@ static int eyedropper_modal(bContext *C, wmOperator *op, const wmEvent *event)
     }
     else {
       WorkspaceStatus status(C);
-      status.opmodal(IFACE_("Cancel"), op->type, EYE_MODAL_CANCEL);
       status.opmodal(IFACE_("Confirm"), op->type, EYE_MODAL_SAMPLE_CONFIRM);
+      status.opmodal(IFACE_("Cancel"), op->type, EYE_MODAL_CANCEL);
 #ifdef __APPLE__
       status.item(TIP_("Press 'Enter' to sample outside of a Blender window"), ICON_INFO);
 #endif
