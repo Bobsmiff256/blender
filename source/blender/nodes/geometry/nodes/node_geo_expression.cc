@@ -2755,12 +2755,12 @@ static void node_register()
 
   // blender::bke::node_register_type(&ntype);
   blender::bke::node_type_storage(
-      &ntype, "NodeGeometryExpression", node_free_storage, node_copy_storage);
+      ntype, "NodeGeometryExpression", node_free_storage, node_copy_storage);
 
   // stash this auto assigmed value
   ExpressionItemsAccessor::node_type = ntype.type_legacy;
 
-  blender::bke::node_register_type(&ntype);
+  blender::bke::node_register_type(ntype);
   node_rna(ntype.rna_ext.srna);
 
   //  node_geo_Expression_cc::node_rna(ntype.rna_ext.srna);
