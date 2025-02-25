@@ -129,6 +129,11 @@ struct Token {
     FUNCTION_TRUNCATE,
     FUNCTION_COMPARE,
     FUNCTION_COMPARE_VEC,
+    FUNCTION_DOT,
+    FUNCTION_CROSS,
+    FUNCTION_NORMALIZE,
+    FUNCTION_LENGTH,
+    FUNCTION_LENGTH2,
     CONVERT_INT_FLOAT,
     CONVERT_FLOAT_INT,
     NUM
@@ -303,6 +308,11 @@ static const TokenInfo const token_info[(int)T::NUM] = {
     {T::FUNCTION_TRUNCATE, "FUNCTION_TRUNCATE", 9, EV::FLOAT, 1, EV::FLOAT},
     {T::FUNCTION_COMPARE, "FUNCTION_COMPARE", 9, EV::INT, 3, EV::FLOAT, EV::FLOAT, EV::FLOAT},
     {T::FUNCTION_COMPARE_VEC, "FUNCTION_COMPARE_VEC", 9, EV::INT, 3, EV::VEC, EV::VEC, EV::FLOAT},
+    {T::FUNCTION_DOT, "FUNCTION_DOT_PRODUCT", 9, EV::FLOAT, 2, EV::VEC, EV::VEC},
+    {T::FUNCTION_CROSS, "FUNCTION_CROSS_PRODUCT", 9, EV::VEC, 2, EV::VEC, EV::VEC},
+    {T::FUNCTION_NORMALIZE, "FUNCTION_NORMALIZE", 9, EV::VEC, 1, EV::VEC},
+    {T::FUNCTION_LENGTH, "FUNCTION_LENGTH", 9, EV::FLOAT, 1, EV::VEC},
+    {T::FUNCTION_LENGTH2, "FUNCTION_LENGTH_SQUARED", 9, EV::FLOAT, 1, EV::VEC},
     {T::CONVERT_INT_FLOAT, "FN_CONV_I2F", 9, EV::FLOAT, 1, EV::INT, NA},
     {T::CONVERT_FLOAT_INT, "FN_CONV_F2I", 9, EV::INT, 1, EV::FLOAT, NA},
 };
@@ -409,6 +419,11 @@ constexpr func_lookup func_table[] = {
     {"truncate", Token::TokenType::FUNCTION_TRUNCATE},
     {"trunc", Token::TokenType::FUNCTION_TRUNCATE},
     {"compare", Token::TokenType::FUNCTION_COMPARE},
+    {"dot", Token::TokenType::FUNCTION_DOT},
+    {"cross", Token::TokenType::FUNCTION_CROSS},
+    {"normalize", Token::TokenType::FUNCTION_NORMALIZE},
+    {"length", Token::TokenType::FUNCTION_LENGTH},
+    {"length2", Token::TokenType::FUNCTION_LENGTH2},
 };
 
 // List of possible overloads for operator and function token types
@@ -1011,8 +1026,8 @@ class ExpressionParser {
 
   bool next_input_is_function_name(const std::string &input, int read_pos)
   {
-    int temp_read_pos = read_pos;
-    return read_function_op(input, temp_read_pos) != Token::TokenType::NONE;
+    // No need to save read_pos as it's passed by value not reference
+    return read_function_op(input, read_pos) != Token::TokenType::NONE;
   }
 
   Token::TokenType read_function_op(const std::string &input, int &read_pos)
@@ -2162,6 +2177,38 @@ class ExpressionProgram {
           int res = compare_ff(v1.x, v2.x, epsilon) && compare_ff(v1.y, v2.y, epsilon) &&
                     compare_ff(v1.z, v2.z, epsilon);
           stack.push_int(res);
+        } break;
+        case TokenType::FUNCTION_DOT: {
+          auto [v1, v2] = stack.pop_two_vectors();
+          float res = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+          stack.push_float(res);
+        } break;
+        case TokenType::FUNCTION_CROSS: {
+          auto [v1, v2] = stack.pop_two_vectors();
+          // Right handed co-ordinate system
+          float3 res;
+          res.x = v1.y * v2.z - v1.z * v2.y;
+          res.y = v1.z * v2.x - v1.x * v2.z;
+          res.z = v1.x * v2.y - v1.y * v2.x;
+          stack.push_vector(res);
+        } break;
+        case TokenType::FUNCTION_NORMALIZE: {
+          float3 v = stack.pop_vector();
+          float len2 = v.x * v.x + v.y * v.y + v.z * v.z;
+          float len = sqrt(len2);
+          float3 res = v / len;
+          stack.push_vector(res);
+        } break;
+        case TokenType::FUNCTION_LENGTH: {
+          float3 v = stack.pop_vector();
+          float len2 = v.x * v.x + v.y * v.y + v.z * v.z;
+          float len = sqrt(len2);
+          stack.push_float(len);
+        } break;
+        case TokenType::FUNCTION_LENGTH2: {
+          float3 v = stack.pop_vector();
+          float len2 = v.x * v.x + v.y * v.y + v.z * v.z;
+          stack.push_float(len2);
         } break;
         case Token::TokenType::CONVERT_INT_FLOAT: {
           int offset = t.value;  // may not be top of stack to convert
