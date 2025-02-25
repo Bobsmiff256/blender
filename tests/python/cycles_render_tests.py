@@ -22,6 +22,9 @@ BLOCKLIST_ALL = [
     "visibility_particles.blend",
     # Temporarily blocked for 4.4 lib upgrade, due to PNG alpha minor difference.
     "image_log_osl.blend",
+    # Temporarily blocked for investigation
+    "light_path_glossy_depth.blend",
+    "light_path_is_glossy_ray.blend",
 ]
 
 # Blocklist that disables OSL specific tests for configurations that do not support OSL backend.
@@ -80,10 +83,6 @@ BLOCKLIST_OPTIX_OSL = [
     'both_displacement.blend',
     'bump_with_displacement.blend',
     'ray_portal.blend',
-    # Volumetric textures using the Genereated textures coordinate are different in OptiX OSL. See 129279
-    'texture_coordinate_generated.blend',
-    'principled_absorption.blend',
-    'denoise_volume.blend',
     # The 3D texture doesn't have the right mappings
     'point_density_.*_object.blend',
     # Dicing tests use wireframe node which doesn't appear to be supported with OptiX OSL

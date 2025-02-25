@@ -10,6 +10,7 @@
 
 #include "GPU_vertex_format.hh"
 #include "BLI_assert.h"
+#include "BLI_math_base.h"
 #include "GPU_capabilities.hh"
 
 #include "gpu_shader_create_info.hh"
@@ -172,6 +173,16 @@ void GPU_vertformat_alias_add(GPUVertFormat *format, const char *alias)
   BLI_assert(attr->name_len < GPU_VERT_ATTR_MAX_NAMES);
   format->name_len++; /* Multi-name support. */
   attr->names[attr->name_len++] = copy_attr_name(format, alias);
+}
+
+GPUVertFormat GPU_vertformat_from_attribute(const char *name,
+                                            const GPUVertCompType comp_type,
+                                            const uint comp_len,
+                                            const GPUVertFetchMode fetch_mode)
+{
+  GPUVertFormat format{};
+  GPU_vertformat_attr_add(&format, name, comp_type, comp_len, fetch_mode);
+  return format;
 }
 
 void GPU_vertformat_multiload_enable(GPUVertFormat *format, int load_count)

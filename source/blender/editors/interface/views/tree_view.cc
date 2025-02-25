@@ -25,6 +25,7 @@
 #include "WM_types.hh"
 
 #include "BLI_listbase.h"
+#include "BLI_math_base.h"
 #include "BLI_multi_value_map.hh"
 
 #include "UI_tree_view.hh"
@@ -240,11 +241,11 @@ void AbstractTreeView::get_hierarchy_lines(const ARegion &region,
 
 static uiButViewItem *find_first_view_item_but(const uiBlock &block, const AbstractTreeView &view)
 {
-  LISTBASE_FOREACH (uiBut *, but, &block.buttons) {
+  for (const std::unique_ptr<uiBut> &but : block.buttons) {
     if (but->type != UI_BTYPE_VIEW_ITEM) {
       continue;
     }
-    uiButViewItem *view_item_but = static_cast<uiButViewItem *>(but);
+    uiButViewItem *view_item_but = static_cast<uiButViewItem *>(but.get());
     if (&view_item_but->view_item->get_view() == &view) {
       return view_item_but;
     }
