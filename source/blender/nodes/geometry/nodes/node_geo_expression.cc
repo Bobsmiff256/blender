@@ -4,7 +4,6 @@
 
 // TODO
 // Fix up execute_program to have a runtime stack class
-// Fix missing NodeExpressionItem.description
 
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
@@ -29,7 +28,7 @@
 #include "RNA_enum_types.hh"
 #include "RNA_prototypes.hh"
 
-namespace blender::nodes::node_geo_Expression_cc {
+namespace blender::nodes::node_geo_expression_cc {
 
 ////////////////////////////////////////////////////////////////////////////
 // Token
@@ -1901,17 +1900,21 @@ static void node_register()
   ntype.gather_link_search_ops = node_gather_link_searches;
   ntype.register_operators = node_operators;
 
-  blender::bke::node_register_type(&ntype);
+  // blender::bke::node_register_type(&ntype);
   blender::bke::node_type_storage(
       &ntype, "NodeGeometryExpression", node_free_storage, node_copy_storage);
 
+  // stash this auto assigmed value
+  ExpressionItemsAccessor::node_type = ntype.type_legacy;
+
+  blender::bke::node_register_type(&ntype);
   node_rna(ntype.rna_ext.srna);
 
-  //  node_fn_Expression_cc::node_rna(ntype.rna_ext.srna);
+  //  node_geo_Expression_cc::node_rna(ntype.rna_ext.srna);
 }
 NOD_REGISTER_NODE(node_register)
 
-}  // namespace blender::nodes::node_geo_Expression_cc
+}  // namespace blender::nodes::node_geo_expression_cc
 
 ////////////////////////////////////////////////////
 // blender::nodes namespace
@@ -1919,17 +1922,20 @@ NOD_REGISTER_NODE(node_register)
 namespace blender::nodes {
 
 StructRNA *ExpressionItemsAccessor::item_srna = &RNA_NodeExpressionItem;
-int ExpressionItemsAccessor::node_type = GEO_NODE_Expression;
+int ExpressionItemsAccessor::node_type = 0;  // needs to be set during node registration
 int ExpressionItemsAccessor::item_dna_type = SDNA_TYPE_FROM_STRUCT(NodeExpressionItem);
 
-void ExpressionItemsAccessor::blend_write_item(BlendWriter *writer, const ItemT &item)
+void ExpressionItemsAccessor::blend_write_item(BlendWriter *writer, const NodeExpressionItem &item)
 {
   BLO_write_string(writer, item.name);
+  BLO_write_string(writer, item.description);
 }
 
-void ExpressionItemsAccessor::blend_read_data_item(BlendDataReader *reader, ItemT &item)
+void ExpressionItemsAccessor::blend_read_data_item(BlendDataReader *reader,
+                                                   NodeExpressionItem &item)
 {
   BLO_read_string(reader, &item.name);
+  BLO_read_string(reader, &item.description);
 }
 
 }  // namespace blender::nodes
