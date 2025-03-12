@@ -518,13 +518,16 @@ class TokenQueue {
     printf("%i Tokens:\n", (int)buffer_.size());
     for (int i = 0; i < buffer_.size(); i++) {
       Token t = buffer_[i];
-      if (t.is_operand())
+      if (t.is_operand()) {
         printf("%s(%d) ", token_info[(int)t.type].name, t.value);
-      else
+      }
+      else {
         printf("%s ", token_info[(int)t.type].name);
+      }
 
-      if (i > 0 && (i % 8) == 0)
+      if (i > 0 && (i % 8) == 0) {
         printf("\n");
+      }
     }
     printf("\n");
   }
@@ -573,8 +576,9 @@ class ExpressionParser {
                         bool terminate_on_comma = false)
   {
     skip_white_space(input, read_pos);
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     if (!parse_operand_or_unary(input, read_pos, output)) {
       set_error_if_none(TIP_("Expected an operand"), read_pos);
@@ -585,13 +589,15 @@ class ExpressionParser {
       // If we've reached the end of the input or a parenthesized expression
       // then we have a valid exprssion
       skip_white_space(input, read_pos);
-      if (read_pos == input.length())
+      if (read_pos == input.length()) {
         return true;
-      if (terminate_on_close_parens && input.at(read_pos) == ')')
+      }
+      if (terminate_on_close_parens && input.at(read_pos) == ')') {
         return true;
-      if (terminate_on_comma && input.at(read_pos) == ',')
+      }
+      if (terminate_on_comma && input.at(read_pos) == ',') {
         return true;
-
+      }
       // Expect an operator and another operand
       if (!parse_operator(input, read_pos, output)) {
         set_error_if_none(TIP_("Expected an operator"), read_pos);
@@ -612,8 +618,9 @@ class ExpressionParser {
   bool parse_operand_or_unary(const std::string &input, int &read_pos, TokenQueue &output)
   {
     skip_white_space(input, read_pos);
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     // Check for unary operators
     Token::TokenType unary_op = Token::TokenType::NONE;
@@ -635,16 +642,18 @@ class ExpressionParser {
         return false;
       }
     }
-    else
+    else {
       return parse_operand(input, read_pos, output);
+    }
   }
 
   bool parse_operand(const std::string &input, int &read_pos, TokenQueue &output)
   {
     skip_white_space(input, read_pos);
 
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     if (input.at(read_pos) == '(') {
       int paren_start = read_pos;
@@ -665,14 +674,16 @@ class ExpressionParser {
       return true;
     }
     else {
-      if (next_input_is_function_name(input, read_pos))
+      if (next_input_is_function_name(input, read_pos)) {
         return parse_function(input, read_pos, output);
-      if (parse_number(input, read_pos, output))
+      }
+      if (parse_number(input, read_pos, output)) {
         return true;
+      }
       error_msg_ = "";  // discard error message from attempting to read number
-      if (read_variable_name_size(input, read_pos) != 0)
+      if (read_variable_name_size(input, read_pos) != 0) {
         return parse_variable(input, read_pos, output);
-
+      }
       set_error_if_none(TIP_("Expected a constant, variable or function"), read_pos);
       return false;
     }
@@ -682,8 +693,9 @@ class ExpressionParser {
   {
     skip_white_space(input, read_pos);
 
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     int start_read_pos = read_pos;
 
@@ -719,18 +731,23 @@ class ExpressionParser {
         return false;
       }
       if (!parse_expression(input, read_pos, output, true, expected_args > 0)) {
-        if (num_args == 2)
+        if (num_args == 2) {
           set_error_if_none(TIP_("Expected 2 arguments to function"), start_read_pos);
-        else
+        }
+        else {
           set_error_if_none(TIP_("Expected 3 arguments to function"), start_read_pos);
+        }
         read_pos = start_read_pos;
         return false;
       }
     };
 
     // Expect a right param
-    if (!parse_right_paren(input, read_pos, output))
+    if (!parse_right_paren(input, read_pos, output)) {
       return false;
+    }
+
+    return true;
   }
 
   bool parse_left_paren(const std::string &input, int &read_pos, TokenQueue &output)
@@ -739,8 +756,9 @@ class ExpressionParser {
 
     skip_white_space(input, read_pos);
 
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       fail = true;
+    }
 
     if (!fail && input.at(read_pos) == '(') {
       output.add_token(Token::TokenType::LEFT_PAREN, 0);
@@ -822,8 +840,9 @@ class ExpressionParser {
   {
     skip_white_space(input, read_pos);
 
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     auto sub_string = input.substr(read_pos, input.length() - read_pos);
     auto last = sub_string.data() + sub_string.size();
@@ -844,10 +863,12 @@ class ExpressionParser {
         output.add_token(Token::TokenType::CONSTANT_FLOAT, f);
         ptr = fptr;
       }
-      if (ptr == last)
+      if (ptr == last) {
         read_pos += sub_string.length();
-      else
+      }
+      else {
         read_pos += ptr - sub_string.data();
+      }
 
       return true;
     }
@@ -878,8 +899,9 @@ class ExpressionParser {
   {
     skip_white_space(input, read_pos);
 
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return false;
+    }
 
     int name_len = read_variable_name_size(input, read_pos);
     if (name_len == 0) {
@@ -933,8 +955,9 @@ class ExpressionParser {
   Token::TokenType read_operator_op(const std::string &input, int &read_pos)
   {
     skip_white_space(input, read_pos);
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return Token::TokenType::NONE;
+    }
 
     // Try single character ops
     char op_char = input.at(read_pos++);
@@ -962,24 +985,33 @@ class ExpressionParser {
     if (input.length() - read_pos < 2) {
       return Token::TokenType::NONE;
     }
+
     std::string two_char_op = input.substr(read_pos, 2);
     read_pos += 2;
-    if (two_char_op == "==")
+    if (two_char_op == "==") {
       return Token::TokenType::OPERATOR_EQUAL;
-    if (two_char_op == "!=")
+    }
+    if (two_char_op == "!=") {
       return Token::TokenType::OPERATOR_NOT_EQUAL;
-    if (two_char_op == ">=")
+    }
+    if (two_char_op == ">=") {
       return Token::TokenType::OPERATOR_GREATER_EQUAL;
-    if (two_char_op == "<=")
+    }
+    if (two_char_op == "<=") {
       return Token::TokenType::OPERATOR_LESS_EQUAL;
-    if (two_char_op == "or")
+    }
+    if (two_char_op == "or") {
       return Token::TokenType::OPERATOR_OR;
-    if (two_char_op == "OR")
+    }
+    if (two_char_op == "OR") {
       return Token::TokenType::OPERATOR_OR;
-    if (two_char_op == "||")
+    }
+    if (two_char_op == "||") {
       return Token::TokenType::OPERATOR_OR;
-    if (two_char_op == "&&")
+    }
+    if (two_char_op == "&&") {
       return Token::TokenType::OPERATOR_AND;
+    }
 
     // Try the single char ops that are also start of two char ops
     read_pos -= 1;
@@ -999,8 +1031,9 @@ class ExpressionParser {
     }
     std::string three_char_op = input.substr(read_pos, 3);
     read_pos += 3;
-    if (three_char_op == "and" || three_char_op == "AND")
+    if (three_char_op == "and" || three_char_op == "AND") {
       return Token::TokenType::OPERATOR_AND;
+    }
 
     return Token::TokenType::NONE;
   }
@@ -1008,17 +1041,21 @@ class ExpressionParser {
   int read_member_offset(const std::string &input, int &read_pos)
   {
     // Note, don't skip whitespace
-    if (read_pos == input.length())
+    if (read_pos == input.length()) {
       return -1;
+    }
 
     const char name = input.at(read_pos);
     read_pos++;
-    if (name == 'x' || name == 'X')
+    if (name == 'x' || name == 'X') {
       return 2;
-    if (name == 'y' || name == 'Y')
+    }
+    if (name == 'y' || name == 'Y') {
       return 1;
-    if (name == 'z' || name == 'Z')
+    }
+    if (name == 'z' || name == 'Z') {
       return 0;
+    }
 
     read_pos--;  // restore read pos before returning error
     return -1;
@@ -1034,8 +1071,9 @@ class ExpressionParser {
   {
     skip_white_space(input, read_pos);
     int paren_pos = input.find('(', read_pos);
-    if (paren_pos == -1)
+    if (paren_pos == -1) {
       return Token::TokenType::NONE;
+    }
 
     // Get string up to opening paren and convert to lowercase
     std::string func_name = input.substr(read_pos, paren_pos - read_pos);
@@ -1068,13 +1106,15 @@ class ExpressionParser {
   {
     int temp_read_pos = read_pos;
     skip_white_space(input, temp_read_pos);
-    if (temp_read_pos == input.length())
+    if (temp_read_pos == input.length()) {
       return 0;
+    }
 
     // Check if the first character is valid
     char first = input.at(temp_read_pos++);
-    if (first != '_' && !isalpha(first))
+    if (first != '_' && !isalpha(first)) {
       return 0;
+    }
 
     while (temp_read_pos < input.length()) {
       char c = input.at(temp_read_pos);
@@ -1162,8 +1202,9 @@ class ExpressionProgram {
 
   static bool check_arguments_match(Token::TokenType func, Token::eValueType arg_type)
   {
-    if (token_info[(int)func].arg1_type != arg_type)
+    if (token_info[(int)func].arg1_type != arg_type) {
       return false;
+    }
     return true;
   }
 
@@ -1171,10 +1212,12 @@ class ExpressionProgram {
                                     Token::eValueType arg1_type,
                                     Token::eValueType arg2_type)
   {
-    if (token_info[(int)func].arg1_type != arg1_type)
+    if (token_info[(int)func].arg1_type != arg1_type) {
       return false;
-    if (token_info[(int)func].arg2_type != arg2_type)
+    }
+    if (token_info[(int)func].arg2_type != arg2_type) {
       return false;
+    }
     return true;
   }
 
@@ -1183,12 +1226,15 @@ class ExpressionProgram {
                                     Token::eValueType arg2_type,
                                     Token::eValueType arg3_type)
   {
-    if (token_info[(int)func].arg1_type != arg1_type)
+    if (token_info[(int)func].arg1_type != arg1_type) {
       return false;
-    if (token_info[(int)func].arg2_type != arg2_type)
+    }
+    if (token_info[(int)func].arg2_type != arg2_type) {
       return false;
-    if (token_info[(int)func].arg3_type != arg3_type)
+    }
+    if (token_info[(int)func].arg3_type != arg3_type) {
       return false;
+    }
     return true;
   }
 
@@ -1208,13 +1254,15 @@ class ExpressionProgram {
   static TokenType get_op_version_for_type(TokenType base_type, eValueType arg_type)
   {
     // Check if base type args are correct
-    if (check_arguments_match(base_type, arg_type))
+    if (check_arguments_match(base_type, arg_type)) {
       return base_type;
+    }
 
     // Find if there is an overload list for this type
     const overload_set *overload_list = find_overloads(base_type);
-    if (!overload_list)
+    if (!overload_list) {
       return TokenType::NONE;
+    }
 
     // Check overloads
     for (int i = 0; i < overload_set::max_overloads; i++) {
@@ -1223,10 +1271,12 @@ class ExpressionProgram {
                       i == 2 ? overload_list->alt3 :
                       i == 3 ? overload_list->alt4 :
                                overload_list->alt5;
-      if (alt == TokenType::NONE)
+      if (alt == TokenType::NONE) {
         return TokenType::NONE;
-      if (check_arguments_match(alt, arg_type))
+      }
+      if (check_arguments_match(alt, arg_type)) {
         return alt;
+      }
     }
 
     // No conversion found
@@ -1239,13 +1289,15 @@ class ExpressionProgram {
                                            eValueType arg2_type)
   {
     // Check if base type args are correct
-    if (check_arguments_match(base_type, arg1_type, arg2_type))
+    if (check_arguments_match(base_type, arg1_type, arg2_type)) {
       return base_type;
+    }
 
     // Find if there is an overload list for this type
     const overload_set *overload_list = find_overloads(base_type);
-    if (!overload_list)
+    if (!overload_list) {
       return TokenType::NONE;
+    }
 
     // Check overloads
     for (int i = 0; i < overload_set::max_overloads; i++) {
@@ -1254,10 +1306,12 @@ class ExpressionProgram {
                       i == 2 ? overload_list->alt3 :
                       i == 3 ? overload_list->alt4 :
                                overload_list->alt5;
-      if (alt == TokenType::NONE)
+      if (alt == TokenType::NONE) {
         return TokenType::NONE;
-      if (check_arguments_match(alt, arg1_type, arg2_type))
+      }
+      if (check_arguments_match(alt, arg1_type, arg2_type)) {
         return alt;
+      }
     }
 
     // No conversion found
@@ -1271,13 +1325,15 @@ class ExpressionProgram {
                                            eValueType arg3_type)
   {
     // Check if base type args are correct
-    if (check_arguments_match(base_type, arg1_type, arg2_type, arg3_type))
+    if (check_arguments_match(base_type, arg1_type, arg2_type, arg3_type)) {
       return base_type;
+    }
 
     // Find if there is an overload list for this type
     const overload_set *overload_list = find_overloads(base_type);
-    if (!overload_list)
+    if (!overload_list) {
       return TokenType::NONE;
+    }
 
     // Check overloads
     for (int i = 0; i < overload_set::max_overloads; i++) {
@@ -1286,10 +1342,12 @@ class ExpressionProgram {
                       i == 2 ? overload_list->alt3 :
                       i == 3 ? overload_list->alt4 :
                                overload_list->alt5;
-      if (alt == TokenType::NONE)
+      if (alt == TokenType::NONE) {
         return TokenType::NONE;
-      if (check_arguments_match(alt, arg1_type, arg2_type, arg3_type))
+      }
+      if (check_arguments_match(alt, arg1_type, arg2_type, arg3_type)) {
         return alt;
+      }
     }
 
     // No conversion found
@@ -1303,15 +1361,18 @@ class ExpressionProgram {
                                    bool allowed_implicit_only = true)
   {
 
-    if (from_type == eValueType::INT && to_type == eValueType::FLOAT)
+    if (from_type == eValueType::INT && to_type == eValueType::FLOAT) {
       return TokenType::CONVERT_INT_FLOAT;
+    }
 
     // No more implicit conversions
-    if (allowed_implicit_only)
+    if (allowed_implicit_only) {
       return TokenType::NONE;
+    }
 
-    if (from_type == eValueType::FLOAT && to_type == eValueType::INT)
+    if (from_type == eValueType::FLOAT && to_type == eValueType::INT) {
       return TokenType::CONVERT_FLOAT_INT;
+    }
 
     // No suitable conversion
     return TokenType::NONE;
@@ -1324,10 +1385,12 @@ class ExpressionProgram {
   {
     output.add_token(t);
     stack_size++;  // constants are ints or floats
-    if (t.type == Token::TokenType::CONSTANT_FLOAT)
+    if (t.type == Token::TokenType::CONSTANT_FLOAT) {
       stack_type.append(eValueType::FLOAT);
-    else
+    }
+    else {
       stack_type.append(eValueType::INT);
+    }
   }
 
   void output_variable(const Token &t,
@@ -1340,10 +1403,12 @@ class ExpressionProgram {
       stack_type.append(eValueType::VEC);
     }
     else {
-      if (t.type == Token::TokenType::VARIABLE_INT || t.type == Token::TokenType::VARIABLE_BOOL)
+      if (t.type == Token::TokenType::VARIABLE_INT || t.type == Token::TokenType::VARIABLE_BOOL) {
         stack_type.append(eValueType::INT);
-      else
+      }
+      else {
         stack_type.append(eValueType::FLOAT);
+      }
     }
 
     // Increase stack size by size of type we just added
@@ -1358,8 +1423,9 @@ class ExpressionProgram {
   TokenType perform_type_conversion(TokenQueue &output, TokenType type, eValueType &arg_type)
   {
     TokenType specialized_op = get_op_version_for_type(type, arg_type);
-    if (specialized_op != TokenType::NONE)
+    if (specialized_op != TokenType::NONE) {
       return specialized_op;
+    }
 
     // See if we can convert int to float
     if (arg_type == eValueType::INT) {
@@ -1381,8 +1447,9 @@ class ExpressionProgram {
                                     eValueType &arg2_type)
   {
     TokenType specialized_op = get_op_version_for_type(type, arg1_type, arg2_type);
-    if (specialized_op != TokenType::NONE)
+    if (specialized_op != TokenType::NONE) {
       return specialized_op;
+    }
 
     // Check if we can convert arg1_type to arg2_type
     TokenType convert_op = get_type_conversion_op(arg1_type, arg2_type);
@@ -1453,8 +1520,9 @@ class ExpressionProgram {
                                     eValueType &arg3_type)
   {
     TokenType specialized_op = get_op_version_for_type(type, arg1_type, arg2_type, arg3_type);
-    if (specialized_op != TokenType::NONE)
+    if (specialized_op != TokenType::NONE) {
       return specialized_op;
+    }
 
     // See if we can convert int to float
     TokenType all_float_op = get_op_version_for_type(
@@ -1554,8 +1622,9 @@ class ExpressionProgram {
     Token::TokenType specialized_op = perform_type_conversion(
         output, t.type, first_type, second_type);
 
-    if (specialized_op == TokenType::NONE)
+    if (specialized_op == TokenType::NONE) {
       return false;
+    }
 
     output.add_token(specialized_op, t.value);
 
@@ -1605,8 +1674,9 @@ class ExpressionProgram {
           // then put this token on the stack
           while (!operator_stack.is_empty()) {
             Token top = operator_stack.last();
-            if (top.precedence() < precedence || top.type == Token::TokenType::LEFT_PAREN)
+            if (top.precedence() < precedence || top.type == Token::TokenType::LEFT_PAREN) {
               break;
+            }
             if (!output_op_or_function(top, output, stack_type, stack_size)) {
               error_msg = unsupported_type_error(top, stack_type);
               return false;
@@ -1629,8 +1699,9 @@ class ExpressionProgram {
           }
           operator_stack.discard_last();
         };
-        if (t.type == Token::TokenType::RIGHT_PAREN)
+        if (t.type == Token::TokenType::RIGHT_PAREN) {
           operator_stack.discard_last();  // right paren discards the left paren
+        }
       }
 
       if (stack_size > MAX_STACK) {
@@ -1691,8 +1762,9 @@ class ExpressionProgram {
           (arg1_type != eValueType::VEC && arg2_type == eValueType::VEC))
         return token_name + TIP_("Cannot mix vector and non vector types in this operation");
 
-      if (arg1_type == eValueType::VEC && arg2_type == eValueType::VEC)
+      if (arg1_type == eValueType::VEC && arg2_type == eValueType::VEC) {
         return token_name + TIP_("Cannot perform this operation on a vector");
+      }
     }
     else if (t.num_args() == 3) {
       return token_name + TIP_("incorrect argument type");
@@ -1804,8 +1876,9 @@ class ExpressionProgram {
 
   output_variant execute_program(Vector<GVArray> &inputs, int index) const
   {
-    if (!program_valid_)
+    if (!program_valid_) {
       return 0;
+    }
 
     const TokenQueue &program = program_buffer_;
     struct RuntimeStack stack;
@@ -2239,17 +2312,23 @@ class ExpressionProgram {
     }
 
     // Get correct type off of stack and return it
-    if (output_type_ == eNodeSocketDatatype::SOCK_FLOAT)
-      return output_variant(stack.pop_float());
-    else if (output_type_ == eNodeSocketDatatype::SOCK_INT)
-      return output_variant(stack.pop_int());
-    else if (output_type_ == eNodeSocketDatatype::SOCK_BOOLEAN) {
-      int tos = stack.pop_int();
-      return output_variant(tos != 0);
+    switch (output_type_) {
+      case eNodeSocketDatatype::SOCK_FLOAT:
+        return output_variant(stack.pop_float());
+      case eNodeSocketDatatype::SOCK_INT:
+        return output_variant(stack.pop_int());
+      case eNodeSocketDatatype::SOCK_BOOLEAN: {
+        int tos = stack.pop_int();
+        return output_variant(tos != 0);
+      }
+      case eNodeSocketDatatype::SOCK_VECTOR:
+        return output_variant(stack.pop_vector());
+      default:
+        BLI_assert_unreachable();
+        break;
     }
-    else
-      return output_variant(stack.pop_vector());
   }
+
   // Some utility methods to pop multiple args in one call, as this common
   struct PopTwoFloatsResults {
     float arg1;  // The argument pushed onto the stack first
@@ -2325,11 +2404,13 @@ class ExpressionEvaluateFunction : public mf::MultiFunction {
 
     // Create the input parameters, skipping unconnected extend socket
     for (int i : node.input_sockets().index_range()) {
-      if (i == 0)  // Skip Expression input
+      if (i == 0) {  // Skip Expression input
         continue;
+      }
       auto in_sock = node.input_sockets()[i];
-      if (in_sock->typeinfo->base_cpp_type != nullptr)
+      if (in_sock->typeinfo->base_cpp_type != nullptr) {
         builder.single_input(in_sock->identifier, *in_sock->typeinfo->base_cpp_type);
+      }
     }
 
     // Create output params
@@ -2438,8 +2519,9 @@ static void node_declare(NodeDeclarationBuilder &b)
   // Bizarrely these two lines are necessary to set b.is_context_dependent
   const bNodeTree *ntree = b.tree_or_null();
   const bNode *node = b.node_or_null();
-  if (node == nullptr)
+  if (node == nullptr) {
     return;
+  }
 
   b.add_input<decl::String>("Expression")
       .default_value(std::string("x"))
@@ -2488,8 +2570,9 @@ static void node_init(bNodeTree * /*tree*/, bNode *node)
 static void node_free_storage(bNode *node)
 {
   NodeGeometryExpression *data = reinterpret_cast<NodeGeometryExpression *>(node->storage);
-  if (!data)
+  if (!data) {
     return;
+  }
 
   socket_items::destruct_array<ExpressionItemsAccessor>(*node);
   MEM_freeN(node->storage);
@@ -2516,19 +2599,23 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
       *ntree, *node, *node, *link);
 
   // If the link wasn't added or it's an output, we're done
-  if (!ok || link->fromnode == node)
+  if (!ok || link->fromnode == node) {
     return ok;
+  }
 
   // If it's the expression socket, allow connection from string socket only
-  if (STREQ(link->tosock->identifier, "Expression"))
+  if (STREQ(link->tosock->identifier, "Expression")) {
     return link->fromsock->type == eNodeSocketDatatype::SOCK_STRING;
+  }
 
   // If we didn't add a new socket, then an existing one got reused. Check the type is valid as
   // try_add_item_via_any_extend_socket doesn't check this
   if (starting_sockets_num == storage->socket_items.items_num) {
     if (!ExpressionItemsAccessor::supports_socket_type(
             (eNodeSocketDatatype)(link->fromsock->type)))
+    {
       return false;
+    }
   }
 
   // Find the index of the added link
@@ -2540,15 +2627,17 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
       break;
     }
   }
-  if (item_index == -1)
+  if (item_index == -1) {
     return ok;  // shouldn't happen
+  }
 
   // Update the socket type
   storage->socket_items.items_array[item_index].socket_type = link->fromsock->type;
 
   // If we didn't add a new socket then no need to rename
-  if (starting_sockets_num == storage->socket_items.items_num)
+  if (starting_sockets_num == storage->socket_items.items_num) {
     return ok;
+  }
 
   // If we're connecting to a socket that's renamable, then keep the existing name
   const bNode *f_node = link->fromnode;
@@ -2565,8 +2654,9 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
     if (has_space) {
       auto new_name = BLI_strdup(item_name);
       for (int i = 0; i < strlen(item_name); i++)
-        if (std::isspace(item_name[i]))
+        if (std::isspace(item_name[i])) {
           new_name[i] = '_';
+        }
       MEM_SAFE_FREE(storage->socket_items.items_array[item_index].name);
       storage->socket_items.items_array[item_index].name = new_name;
     }
@@ -2581,8 +2671,9 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
   // rename the new connect to something more convienient than the default
   const char *new_name = nullptr;
   bool free_new_name = false;
-  if (item_index == 0)
+  if (item_index == 0) {
     new_name = "x";
+  }
   else {
     auto prev_name = storage->socket_items.items_array[item_index - 1].name;
     new_name = ExpressionItemsAccessor::get_new_unique_name(*node, prev_name);
@@ -2591,8 +2682,9 @@ static bool node_insert_link(bNodeTree *ntree, bNode *node, bNodeLink *link)
   if (new_name) {
     MEM_SAFE_FREE(storage->socket_items.items_array[item_index].name);
     storage->socket_items.items_array[item_index].name = BLI_strdupn(new_name, strlen(new_name));
-    if (free_new_name)
+    if (free_new_name) {
       MEM_SAFE_FREE(new_name);
+    }
   }
 
   return ok;
@@ -2628,8 +2720,9 @@ static void node_layout_ex(uiLayout *layout, bContext *C, PointerRNA *ptr)
 
 static void node_geo_exec(GeoNodeExecParams params)
 {
-  if (!params.output_is_required("Result"))
+  if (!params.output_is_required("Result")) {
     return;
+  }
 
   // Get the Expression
   std::string Expression = params.get_input<std::string>("Expression");

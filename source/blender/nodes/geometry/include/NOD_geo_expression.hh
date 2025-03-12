@@ -139,10 +139,10 @@ struct ExpressionItemsAccessor {
       return new_name;
     }
     else {
-      // other wise append or increament a number
+      // otherwise append or increament a number
       size_t base_name_len = strlen(base_name);
       char *new_name = (char *)MEM_mallocN(base_name_len + 6, __func__);
-      strncpy(new_name, base_name, base_name_len);
+      strncpy(new_name, base_name, base_name_len + 1);
 
       int i = 0;
       char *num_buf = &new_name[strlen(base_name)];
@@ -159,7 +159,10 @@ struct ExpressionItemsAccessor {
 
       do {
         i++;
-        itoa(i, num_buf, 10);
+        //        itoa(i, num_buf, 10);
+        std::string s = std::to_string(i);
+        num_buf[s.size()] = '\0';
+        strncpy(num_buf, s.c_str(), s.size());
       } while (!is_unique_name(node, new_name) && i < 99999);
       return new_name;
     }
