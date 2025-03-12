@@ -2549,7 +2549,7 @@ static void node_declare(NodeDeclarationBuilder &b)
 
 static void node_init(bNodeTree * /*tree*/, bNode *node)
 {
-  NodeGeometryExpression *data = MEM_cnew<NodeGeometryExpression>(__func__);
+  NodeGeometryExpression *data = MEM_callocN<NodeGeometryExpression>(__func__);
 
   data->socket_items.next_identifier = 0;
   data->socket_items.items_array = nullptr;
@@ -2559,7 +2559,7 @@ static void node_init(bNodeTree * /*tree*/, bNode *node)
   node->storage = data;
 
   // Add a couple of predefined inputs
-  data->socket_items.items_array = MEM_cnew_array<NodeExpressionItem>(2, __func__);
+  data->socket_items.items_array = MEM_calloc_arrayN<NodeExpressionItem>(2, __func__);
   ExpressionItemsAccessor::init_with_socket_type_and_name(
       *node, data->socket_items.items_array[0], eNodeSocketDatatype::SOCK_FLOAT, "x");
   //  ExpressionItemsAccessor::init_with_socket_type_and_name(
@@ -2583,8 +2583,8 @@ static void node_free_storage(bNode *node)
 static void node_copy_storage(bNodeTree * /*dst_tree*/, bNode *dst_node, const bNode *src_node)
 {
   const NodeGeometryExpression &src_storage = node_storage(*src_node);
-  NodeGeometryExpression *dst_storage = (NodeGeometryExpression *)MEM_cnew<NodeGeometryExpression>(
-      __func__, src_storage);
+  NodeGeometryExpression *dst_storage = (NodeGeometryExpression *)
+      MEM_dupallocN<NodeGeometryExpression>(__func__, src_storage);
   dst_node->storage = dst_storage;
 
   socket_items::copy_array<ExpressionItemsAccessor>(*src_node, *dst_node);
