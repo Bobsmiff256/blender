@@ -111,7 +111,7 @@ struct ExpressionItemsAccessor {
   static bool is_unique_name(const bNode &node, const char *new_name)
   {
     auto *storage = static_cast<NodeGeometryExpression *>(node.storage);
-    for (auto it : storage->socket_items.items()) {
+    for (auto const it : storage->socket_items.items()) {
       if (it.name && STREQ(new_name, it.name)) {
         return false;
       }

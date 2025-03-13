@@ -5,7 +5,7 @@
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
 
-#include "NOD_geo_Expression.hh"
+#include "NOD_geo_expression.hh"
 #include "NOD_node_declaration.hh"
 #include "node_geometry_util.hh"
 
@@ -17,7 +17,9 @@
 //  #include "UI_resources.hh"
 #include "NOD_socket_items_ui.hh"
 #include "NOD_socket_search_link.hh"
-#include "corecrt_math_defines.h"
+// #include "corecrt_math_defines.h"
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include "BLO_read_write.hh"
 #include <charconv>
@@ -217,7 +219,7 @@ using EV = Token::eValueType;
 using T = Token::TokenType;
 #define NA EV::NONE
 
-static const TokenInfo const token_info[(int)T::NUM] = {
+static const TokenInfo token_info[(int)T::NUM] = {
     {T::NONE, "NONE", 0, NA, 0, NA, NA},
     // Constants
     {T::CONSTANT_FLOAT, "CONST_FLOAT", 0, EV::FLOAT, 0, NA, NA},
@@ -563,7 +565,7 @@ class ExpressionParser {
 
   void set_error_if_none(const char *msg, int position)
   {
-    if (error_msg_ == nullptr || error_msg_ == "") {
+    if (error_msg_ == nullptr || STREQ(error_msg_, "")) {
       error_msg_ = msg;
       error_pos_ = position;
     }
@@ -641,6 +643,7 @@ class ExpressionParser {
         set_error_if_none(TIP_("Expected operand after unary operator"), read_pos);
         return false;
       }
+      return true;
     }
     else {
       return parse_operand(input, read_pos, output);
@@ -1640,7 +1643,7 @@ class ExpressionProgram {
     return true;
   }
 
-  bool push_function() {}
+  // void push_function() {}
 
   bool create_postfix_program(TokenQueue const &parse_buffer,
                               TokenQueue &output,
@@ -2325,7 +2328,7 @@ class ExpressionProgram {
         return output_variant(stack.pop_vector());
       default:
         BLI_assert_unreachable();
-        break;
+        return output_variant(0);  // return something to avoid compiler error
     }
   }
 
@@ -2380,9 +2383,6 @@ class ExpressionEvaluateFunction : public mf::MultiFunction {
   ExpressionEvaluateFunction(const bNode &node, std::unique_ptr<ExpressionProgram> program)
       : program_(std::move(program))
   {
-    const NodeGeometryExpression *node_storage = static_cast<NodeGeometryExpression *>(
-        node.storage);
-
     CreateSignature(node);
     this->set_signature(&signature_);
 
@@ -2419,7 +2419,7 @@ class ExpressionEvaluateFunction : public mf::MultiFunction {
                           *bke::socket_type_to_geo_nodes_base_cpp_type(program_->output_type_));
   }
 
-  void call(const IndexMask &mask, mf::Params params, mf::Context context) const final
+  void call(const IndexMask &mask, mf::Params params, mf::Context /* context */) const final
   {
     GMutableSpan results = params.uninitialized_single_output(first_output_idx_, "Result");
 
